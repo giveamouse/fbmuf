@@ -4,6 +4,11 @@
 ( WhereAre v6.02   Copyright 01/2002 by Revar revar@belfry.com )
 ( Released under the terms of the LGPL.                        )
      
+$author Revar Desmera <revar@belfry.com>
+$version 6.02
+$note Released under the terms of the LGPL.
+
+
 $def WA_PROP  "_whereare"
 $def DIR_PROP "_wherearedir"
 $def WF_PROP  "_prefs/con_announce_list"
