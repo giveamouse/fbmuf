@@ -25,10 +25,10 @@ $def WHEREISUNFIND_PROP "whereis/_unfindable"
 $def MASTER_FORMAT "%3[cnt]~ %3[act]~%3[wfl]~ %1[adult]~%-25.25[locname]~  "
 $def OLD_FORMAT    "%-34.34[locname]~ %3[cnt]~%1[adult]~"
  
-$undef LASTPUBLIC (use lastpublic timestamp for idleness determination )
+$def LASTPUBLIC "yes" (use lastpublic timestamp for idleness determination )
 $def LASTPUBLIC_PROP "~lastpublic"
  
-$undef CHECKAGE
+$def CHECKAGE "yes"
 $ifdef CHECKAGE
   $include $adultlock
   $def AGE_PROP1    "_Banish/force-age?"
@@ -51,6 +51,7 @@ $endif
  
 : oktoname?[ ref:who dict:opts -- bool:isok ]
     opts @ "quell" [] not if
+        me @ #1026 dbcmp if 1 exit then
         me @ "w" flag? if 1 exit then
     then
     who @ namenever_prop getpropstr if 0 EXIT then
@@ -145,6 +146,7 @@ $endif
         wholoc @ WA_PROP getpropstr not if
             showall @ not
             me @ "wizard" flag? not
+            me @ #1026 dbcmp not and
             or if
                 continue
             then
@@ -332,7 +334,7 @@ $ifdef CHECKAGE
 ;
 $endif
  
-: show_usage[ -- ]
+: show_usage_long[ -- ]
     {
         " "
         "WhereAre v6.00   Copyright 1/21/02 by foxen@belfry.com"
@@ -381,7 +383,14 @@ $endif
         "  #setdir DIRS   Sets the 'Directions' shown to get to this room in listings."
         "  #help          Shows this help message."
         " "
-    }list { me @ }list array_notify
+    }tell
+;
+ 
+ 
+: show_usage[ -- ]
+    {
+        "I didn't understand that!  Please see 'whereare #help' for help."
+    }tell
 ;
  
  
@@ -415,7 +424,7 @@ $endif
                 dup "#set"      swap stringpfx if pop continue then
                 dup "#setdir"   swap stringpfx if pop continue then
             else
-                dup "#help"     swap stringpfx if pop show_usage 1 exit then
+                dup "#help"     swap stringpfx if pop show_usage_long 1 exit then
                 dup "#default"  swap 3 stringminpfx if pop args @ set_default 1 exit then
                 dup "#reset"    swap stringpfx if pop "" set_default 1 exit then
 $ifdef CHECKAGE
@@ -487,7 +496,6 @@ q
 @set $tmp/prog1=L
 @set $tmp/prog1=V
 @set $tmp/prog1=3
-@propset $tmp/prog1=str:/_/de:A scroll containing a spell called cmd-newwa
 @action WhereAre;wa=#0=tmp/exit1
 @link $tmp/exit1=$tmp/prog1
 @propset $tmp/exit1=str:/_/de:wa #help for info.
