@@ -40,7 +40,7 @@ $def ALLOWED_HOSTS "localhost" "192.168.0.1"
   
 : check_auth[ int:dscr dict:args -- int:is_ok ]
     { ALLOWED_HOSTS }list dscr @ descrhost 
-    array_findvals not if 0 exit then
+    array_findval not if 0 exit then
 
     args @ "auth" [] 0 []
     AUTHTOKEN strcmp not
