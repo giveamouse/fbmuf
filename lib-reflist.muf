@@ -54,53 +54,38 @@ $include $lib/look
 $include $lib/match
   
 : REF-delete (obj reflist killref -- )
-  3 dupn pop getpropstr " " strcat
-  swap "%d " fmtstring "" swap subst
-  " " "  " subst
-  strip setpropstr
+  var ref ref !
+  over over array_get_reflist
+  ref @ array_excludeval
+  array_put_reflist
 ;
   
 : REF-add (obj reflist addref -- )
-  3 dupn REF-delete
-  3 dupn pop getpropstr " " strcat
-  swap "%d " fmtstring strcat
-  " " "  " subst
-  strip setpropstr
+  var ref ref !
+  over over array_get_reflist
+  ref @ array_excludeval
+  ref @ swap array_appenditem
+  array_put_reflist
 ;
   
 : REF-first (obj reflist -- firstref)
-  getpropstr " " split pop
-  dup if stod else pop #1 then
+  array_get_reflist 0 []
 ;
   
 : REF-next (obj reflist currref -- nextref)
-  rot rot getpropstr
-  swap "%d " fmtstring split
-  swap pop striplead
-  dup if
-      " " split pop stod
-  else
-      pop #-1
-  then
+  rot rot array_get_reflist
+  dup rot array_findval
+  0 [] array_next
+  not if pop #-1 then
 ;
-  
+
 : REF-inlist? (objref reflistname dbreftocheck -- inlist?)
-  rot rot getpropstr " " strcat
-  swap "%d " fmtstring instr
+  rot rot array_get_reflist
+  swap array_findval array_count
 ;
   
 : REF-allrefs (d s -- dx...d1 i)
-  getpropstr STRsms strip
-  0 array_make
-  { rot " " explode }list
-  foreach
-    swap pop
-    stod dup if
-      swap dup array_count array_setitem
-    else
-      pop
-    then
-  repeat
+  rot rot array_get_reflist
   array_vals
 ;
 
@@ -109,21 +94,16 @@ $include $lib/match
 ;
 
 : REF-filter (a d s -- dx...d1 i)
-  getpropstr STRsms strip
-  0 array_make
-  { rot " " explode }list
+  array_get_reflist
+  0 array_make swap
   foreach
     swap pop
-    stod dup if
-      dup 3 pick execute if
-        swap dup array_count array_setitem
-      else pop
-      then
+    dup 4 pick execute if
+      array_appenditem
     else pop
     then
   repeat
-  swap pop
-  array_vals
+  swap pop array_vals
 ;
 
 
