@@ -1,8 +1,8 @@
-@prog lib-gui
-1 99999 d
+@program lib-gui
+1 9999 d
 1 i
 (
- GUI_GENERATE[ int:Dscr list:DlogSpec -- dict:Handlers str:DlogID ]
+  GUI_GENERATE[ int:Dscr list:DlogSpec -- dict:Handlers str:DlogID ]
      Given a nested list that describes a dialog, sends all MCP commands
      neccesary to build that dialog, and returns a dictionary of callbacks
      to be called by that dialog's events, and the dialogID of the new
@@ -91,68 +91,79 @@
          "hweight"    Specifies the expansion ratio for the current column.
   
   
-  
- GUI_EVENT_PROCESS[ dict:GuiHandlers dict:OtherHandlers -- dict:GuiHandlers' dict:OtherHandlers' dictArgs strEvent ]
-     This waits for and processes events as they come in.  If there are
-     callbacks available for each event, they will be called.
-  
-     This function takes two dictionaries as arguments.  The first is keyed
-     by dialogID, with values that are themselves dictionaries of callback
-     addresses, keyed by by controlID and gui-event type.  ie:
+  GUI_DLOG_REGISTER[ str:dlogid dict:handlers -- ]
+     This registers a set of event handler callbacks for a dialog.  These
+     will be called by GUI_EVENT_PROCESS if an event comes in for that dialog,
+     that is listed among those events it has a handler for.  The handlers
+     dictionary argument is keyed by controlID and event/error type, and the
+     values are the addresses of the functions to call.  ie:
          {
-             dlogid1 @ {
-                 "OkayBtn|buttonpress"   'okaybtn-callback
-                 "CancelBtn|buttonpress" 'cancel-callback
-             }dict
-             dlogid2 @ {
-                 "_ok|buttonpress"     'okaybtn-callback
-                 "_apply|buttonpress"  'okaybtn-callback
-                 "_closed|buttonpress" 'cancel-callback
-             }dict
+             "OkayBtn|buttonpress"   'okaybtn-callback
+             "CancelBtn|buttonpress" 'cancel-callback
+             "_closed|buttonpress"   'cancel-callback
+             "BodyTxt|EOUTOFRANGE"   'error-handler-cb
+             " default"              'handle-other-events-cb
          }dict
-     This will let it deal with more than one dialog at a time if needed.
-     Gui callbacks have the signature:
-        [ int:Dscr str:DlogID str:CtrlID str:GuiEventType -- int:ExitRequested ]
-     If the callback returns true, then GUI_EVENT_PROCESS will return.
+     A special key of " default" will be used if it exists, when a gui event
+     comes in that does not match one of the more specific handlers.
+     Gui callbacks are expected to have the signature:
+     [ int:Dscr str:DlogID str:CtrlID str:GuiEventType -- int:ExitRequested ]
+     Error handler callbacks are expected to have the signature:
+     [ int:Dscr str:DlogID str:CtrlID str:ErrText str:ErrCode -- int:ExitRequested ]
   
-     The second dictionary passed to GUI_EVENT_PROCESS is keyed with the
-     names of any other event types that MUF may support.  The values are
-     the addresses of the callback functions for each event.  ie:
-         {
-             "TIMER.1"  'timer1-callback
-             "USER.foo" 'foo-callback
-         }dict
-     This is here for future expansion of the event system.
-     Miscellaneous event callbacks have the signature:
-        [ dict:Args str:EventType -- int:ExitRequested ]
-     or
-        [ dict:Args str:EventType -- dict:GuiHandlers dict:OtherHandlers ]
  
-     In the first form, if the callback returns true, then GUI_EVENT_PROCESS
-     will return.
+  GUI_DLOG_DEREGISTER[ str:dlogid -- ]
+     Deregisters all callback handlers for the given dialog, making them no
+     longer exist for purposes of GUI_EVENT_PROCESS.
+ 
+ 
+  EVENT_REGISTER[ str:eventid addr:handler -- ]
+     This registers a callback for a specific event type.  This callback
+     will be called by GUI_EVENT_PROCESS if an event comes in that matches.
+     A special eventid of " default" will let you specify a callback for all
+     other events that you don't have a handler for.
+     Miscellaneous event callbacks have the signature:
+     [ dict:Context str:EventType -- int:ExitRequested ]
   
-     In the second form, the callback is requesting a change to the set of
-     handlers that GUI_EVENT_PROCESS should deal with.  The GuiHandlers
-     dictionary is for dialogs, and is in the same format as the GuiHandlers
-     dictionary argument passed to GUI_EVENT_PROCESS.  The OtherHandlers
-     dictionary is for miscellaneous events, and is in the format of the
-     OtherHandlers dictionary argument passed to GUI_EVENT_PROCESS.  If the
-     value associated with one of the keys in either dictionary is a false
-     value, [ie: 0, null string, etc] then that event or dialog is explicitly
-     forgotten about.  You must do this when you use the GUI_DLOG_CLOSE
+      
+  EVENT_DEREGISTER[ str:dlogid -- ]
+     Deregisters the callback for the given event type, making it no longer
+     exist for purposes of GUI_EVENT_PROCESS.
+     
+ 
+  GUI_EVENT_PROCESS[ -- dict:Args str:Event ]
+     This waits for and processes events as they come in.  If there are
+     callbacks available for each event, as registered by GUI_DLOG_REGISTER
+     or EVENT_REGISTER, they will be called.
+  
+     Gui callbacks are expected to have the signature:
+     [ int:Dscr str:DlogID str:CtrlID str:GuiEventType -- int:ExitRequested ]
+     If the callback returns true, then GUI_EVENT_PROCESS will exit.
+ 
+     Gui error handler callbacks are expected to have the signature:
+     [ int:Dscr str:DlogID str:CtrlID str:ErrText str:ErrCode -- int:ExitRequested ]
+     If the callback returns true, then GUI_EVENT_PROCESS will exit.
+     If an error event is recieved that we don't have a handler for,
+     then this will ABORT the program, with the given error message.
+  
+     Miscellaneous event callbacks have the signature:
+     [ dict:Context str:EventType -- int:ExitRequested ]
+     If the callback returns true, then GUI_EVENT_PROCESS will exit.
+ 
+     You must do a GUI_DLOG_DEREGISTER when you use the GUI_DLOG_CLOSE
      primitive in a callback, to let GUI_EVENT_PROCESS know that it no longer
      needs to worry about that dialog.
      
-     GUI_EVENT_PROCESS will return when all dialogs have been dismissed, or
-     when one of the callbacks returns true, or when an event is received for
-     a dialog that this function wasn't told about.  The values returned are:
-         1. The dictionary of remaining GUI dialog callbacks.
-         2. The dictionary of remaining "other" event callbacks.
-         3. The dictionary of data returned by EVENT_WAIT for the event that 
-             triggered the exiting.
-         4. The event string returned by EVENT_WAIT.
+     GUI_EVENT_PROCESS will return when all dialogs have been dismissed or
+     deregistered in a callback, or when one of the callbacks returns true.
+     The values returned are:
+         1. The dictionary of context data returned by EVENT_WAIT for the
+             event that triggered the exiting.
+         2. The event string returned by EVENT_WAIT.
 )
-  
+ 
+$def }join }list "" array_join 
+ 
 : list_parse[ list:spec -- dict:args list:ctrls ]
     ""      var! key
     { }dict var! args
@@ -188,7 +199,7 @@
 : gui_generate_ctrl[ str:dlogid str:pane list:ctrlspec -- dictHandlers ]
     ctrlspec @ 0 []
     var! type
-
+ 
     ctrlspec @ 1 []
     var! id
   
@@ -402,7 +413,7 @@
   
     Dscr @ type @ title @
     DlogSpec @ 2 9999 [..]
-
+ 
     type @ D_TABBED stringcmp not
     type @ D_HELPER stringcmp not or if
         gui_generate_paned
@@ -411,7 +422,6 @@
     then
 ;
 PUBLIC gui_generate
- 
  
 (--------------------------------------------------------------)
 ( Gui Dispatcher                                               )
@@ -442,77 +452,153 @@ PUBLIC gui_generate
         then
     repeat
 ;
-  
-: gui_event_process[ dict:GuiHandlers dict:OtherHandlers --
-                     dict:GuiHandlers dict:Args str:Event ]
+ 
+ 
+lvar GuiHandlers
+lvar OtherHandlers
+ 
+ 
+: gui_dlog_register[ str:dlogid dict:handlers -- ]
+    GuiHandlers @ if
+        handlers @ GuiHandlers @
+        "GUI." dlogid @ strcat
+        array_setitem GuiHandlers !
+    else
+        { "GUI." dlogid @ strcat handlers @ }dict GuiHandlers !
+    then
+;
+PUBLIC gui_dlog_register
+ 
+ 
+: gui_dlog_deregister[ str:dlogid -- ]
+    GuiHandlers @ if
+        GuiHandlers @
+        "GUI." dlogid @ strcat
+        array_delitem GuiHandlers !
+    else
+        { }dict GuiHandlers !
+    then
+;
+PUBLIC gui_dlog_deregister
+ 
+ 
+: gui_dlogs_registered[ -- dict:GuiHandlers ]
+    GuiHandlers @ if
+        GuiHandlers @
+    else
+        { }dict dup GuiHandlers !
+    then
+;
+PUBLIC gui_dlogs_registered
+ 
+ 
+: event_register[ str:eventid addr:callback -- ]
+    OtherHandlers @ if
+        callback @ OtherHandlers @ eventid @ array_setitem OtherHandlers !
+    else
+        { eventid @ callback @ }dict OtherHandlers !
+    then
+;
+PUBLIC event_register
+ 
+ 
+: event_deregister[ str:eventid -- ]
+    OtherHandlers @ if
+        OtherHandlers @ eventid @ array_delitem OtherHandlers !
+    else
+        { }dict OtherHandlers !
+    then
+;
+PUBLIC event_deregister
+ 
+ 
+: events_registered[ -- dict:EventHandlers ]
+    OtherHandlers @ if
+        OtherHandlers @
+    else
+        { }dict dup OtherHandlers !
+    then
+;
+PUBLIC events_registered
+ 
+ 
+: gui_event_process[ -- dict:Context str:Event ]
+    GuiHandlers @ not if { }dict GuiHandlers ! then
+    OtherHandlers @ not if { }dict OtherHandlers ! then
     begin
-        EVENT_WAIT
-        var event event !
-        var args args !
+        GuiHandlers @ array_keys array_make
+        OtherHandlers @ array_keys array_make
+        array_union
+ 
+        EVENT_WAITFOR
+        var! event
+        var! args
         event @ "GUI." 4 strncmp not if
-            event @ 4 strcut swap pop
-            GuiHandlers @ swap []
-            var dests dests !
+            GuiHandlers @ event @ []
+            var! dests
             dests @ not if
-                (If no callbacks for this dialog, return.)
-                GuiHandlers @ OtherHandlers @ args @ event @
-                break
+                (If no callbacks for this dialog, ignore it.)
+                continue
             then
             
-            var dscr     args @ "descr"     [] dscr !
-            var dlogid   args @ "dlogid"    [] dlogid !
-            var id       args @ "id"        [] id !
-            var guievent args @ "event"     [] guievent !
-            var dismiss  args @ "dismissed" [] dismiss !
+            args @ "descr"     [] var! dscr
+            args @ "dlogid"    [] var! dlogid
+            args @ "id"        [] var! id
+            args @ "event"     [] var! guievent
+            args @ "dismissed" [] var! dismiss
+            args @ "errcode"   [] var! errcode
+            args @ "errtext"   [] var! errtext
  
-            dscr @ dlogid @ id @ guievent @
-            id @ "|" strcat guievent @ strcat dests @ dispatch
-  
-            not if
-                pop pop pop pop
-            else
-                dup int? if
+            id @ not if "" id ! then
+ 
+            errcode @ if
+                dscr @ dlogid @ id @ errtext @ errcode @
+                { id @ "|" errcode @ }join
+                dests @ dispatch
+                not if
+                    5 popn
+                    { errcode @ ": " errtext @ }join
+                    abort
+                else
                     if
                         (The callback wants us to exit.)
-                        GuiHandlers @ OtherHandlers @ args @ event @
+                        args @ event @
                         break
                     then
+                then
+            else
+                dscr @ dlogid @ id @ guievent @
+                { id @ "|" guievent @ }join
+                dests @ dispatch
+                not if
+                    4 popn
                 else
-                    dup array? if
-                        OtherHandlers @ gui_dict_add OtherHandlers !
-                        GuiHandlers @ gui_dict_add GuiHandlers !
-                    else
-                        pop "Invalid return type from callback function." abort
+                    if
+                        (The callback wants us to exit.)
+                        args @ event @
+                        break
                     then
                 then
+                dismiss @ if
+                    (The dialog was dismissed.  Deregister it.)
+                    dlogid @ gui_dlog_deregister
+                then
             then
-            dismiss @ if
-                (The dialog was dismissed.  Forget that dialog.)
-                GuiHandlers @ dlogid @ array_delitem GuiHandlers !
-            then
+ 
             GuiHandlers @ array_count not if
                 (No more dialogs left.  Time to exit)
-                GuiHandlers @ OtherHandlers @ args @ event @
+                args @ event @
                 break
             then
         else
             args @ event @ dup OtherHandlers @ dispatch
             not if
-                pop pop pop pop
+                4 popn
             else
-                dup int? if
-                    if
-                        (The callback wants us to exit.)
-                        GuiHandlers @ OtherHandlers @ args @ event @
-                        break
-                    then
-                else
-                    dup array? if
-                        OtherHandlers @ gui_dict_add OtherHandlers !
-                        GuiHandlers @ gui_dict_add GuiHandlers !
-                    else
-                        pop "Invalid return type from callback function." abort
-                    then
+                if
+                    (The callback wants us to exit.)
+                    args @ event @
+                    break
                 then
             then
         then
@@ -520,28 +606,71 @@ PUBLIC gui_generate
 ;
 PUBLIC gui_event_process
  
-: gui_process_single_dlog[ str:dlogid -- dict:context str:ctrlid ]
-    begin
-        event_wait
-        "GUI." dlogid @ strcat strcmp not if
-            dup "id" []
-            break
+ 
+: _gui_messagebox_cb[ int:dscr str:dlogid str:ctrlid str:event -- int:exit ]
+    1
+;
+ 
+: GUI_MESSAGEBOX[ str:title str:text list:buttons -- str:buttonpressed ]
+    0 var! maxlen
+    buttons @
+    foreach
+        strlen dup maxlen @ > if
+            maxlen !
         else
             pop
         then
+        pop
     repeat
+    maxlen @ 4 + maxlen !
+ 
+    { D_SIMPLE title @
+        { C_LABEL ""
+            "value" text @
+            }list
+        { C_FRAME "_bfr"
+            "sticky" "sew"
+            buttons @
+            foreach
+                swap pop
+                var! bname
+                { C_BUTTON bname @
+                    "text" bname @
+                    "width" maxlen @
+                    "newline" 0
+                    "sticky" ""
+                    "hweight" 1
+                    "|buttonpress" '_gui_messagebox_cb
+                    }list
+            repeat
+            }list
+    }list
+    DESCR swap GUI_GENERATE
+    swap pop
+    dup GUI_DLOG_SHOW
+    "GUI." swap strcat
+    1 array_make event_waitfor
+    pop "id" []
 ;
-PUBLIC gui_process_single_dlog
+PUBLIC gui_messagebox
 .
 c
 q
 @register lib-gui=lib/gui
 @register #me lib-gui=tmp/prog1
+@set $tmp/prog1=L
 @set $tmp/prog1=S
 @set $tmp/prog1=H
 @set $tmp/prog1=3
+@propset $tmp/prog1=str:/_defs/EVENT_DEREGISTER:"$lib/gui" match "event_deregister" call
+@propset $tmp/prog1=str:/_defs/EVENT_REGISTER:"$lib/gui" match "event_register" call
+@propset $tmp/prog1=str:/_defs/EVENTS_REGISTERED:"$lib/gui" match "events_registered" call
+@propset $tmp/prog1=str:/_defs/GUI_DLOG_DEREGISTER:"$lib/gui" match "gui_dlog_deregister" call
+@propset $tmp/prog1=str:/_defs/GUI_DLOG_REGISTER:"$lib/gui" match "gui_dlog_register" call
+@propset $tmp/prog1=str:/_defs/GUI_DLOGS_REGISTERED:"$lib/gui" match "gui_dlogs_registered" call
 @propset $tmp/prog1=str:/_defs/GUI_EVENT_PROCESS:"$lib/gui" match "gui_event_process" call
 @propset $tmp/prog1=str:/_defs/GUI_GENERATE:"$lib/gui" match "gui_generate" call
+@propset $tmp/prog1=str:/_defs/GUI_MESSAGEBOX:"$lib/gui" match "gui_messagebox" call
 @propset $tmp/prog1=str:/_defs/{BUTTON:{ C_BUTTON
 @propset $tmp/prog1=str:/_defs/{CHECKBOX:{ C_CHECKBOX
 @propset $tmp/prog1=str:/_defs/{COMBOBOX:{ C_COMBOBOX
@@ -555,6 +684,7 @@ q
 @propset $tmp/prog1=str:/_defs/{MULTIEDIT:{ C_MULTIEDIT
 @propset $tmp/prog1=str:/_defs/{NOTEBOOK:{ C_NOTEBOOK
 @propset $tmp/prog1=str:/_defs/{PANE:{ "notebook_pane"
+@propset $tmp/prog1=str:/_defs/{PASSWORD:{ "password"
 @propset $tmp/prog1=str:/_defs/{SCALE:{ C_SCALE
 @propset $tmp/prog1=str:/_defs/{SIMPLE_DLOG:{ D_SIMPLE
 @propset $tmp/prog1=str:/_defs/{SPINNER:{ C_SPINNER
