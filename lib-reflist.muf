@@ -34,6 +34,12 @@
     Returns a range on the stack containing all the refs in the list,
     with the count of them on top.
 
+  REF-array [objref reflistname -- listarray ]
+	Returns a list array, containing all the dbrefs in the list.
+
+  REF-array-set [objref reflistname listarray -- ]
+	Sets the given reflist to the given list array of dbrefs.
+
   REF-filter [address objref reflistname -- refx...ref1 refcount]
     Returns a range of dbrefs on the stack, filtered from the given reflist.
     The filtering is done by a function that you pass the address of.  The
