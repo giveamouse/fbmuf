@@ -172,6 +172,7 @@ lvar realtrig
 ;
  
 : short-list ( d... i -- s )
+  dup not if pop "" exit then
   dup 3 <
   if
     1 - dup 2 + rotate name over
