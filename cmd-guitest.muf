@@ -4,7 +4,7 @@
 $include $lib/gui
 $def tell descrcon swap connotify
   
-: generic-handler (intDescr strDlogID strCtrlID strEvent -- intExit)
+: generic_handler (intDescr strDlogID strCtrlID strEvent -- intExit)
     var guievent guievent !
     var ctrlid ctrlid !
     var dlogid dlogid !
@@ -23,9 +23,73 @@ $def tell descrcon swap connotify
     0
 ;
   
-: cancelbtn-handler (intDescr strDlogID strCtrlId strEvent -- intExit)
-    pop pop pop "Dialog cancelled!" swap tell
-    0
+: gen_yesno_dlog (strData strTitle strMessage addrYesCB addrNoCB -- dictHandlers strDlogId )
+    var nocb nocb !
+    var yescb yescb !
+    var text text !
+    var title title !
+    var mesgnum mesgnum !
+  
+    {SIMPLE_DLOG title @
+        {DATUM "data"
+            "value" mesgnum @
+            }CTRL
+        {LABEL ""
+            "value" text @
+            "colspan" 2
+            }CTRL
+        {BUTTON "yesbtn"
+            "text" "Yes"
+            "width" 8
+            "newline" 0
+   yescb @ address? if
+    "|buttonpress" yescb @
+   then
+            }CTRL
+        {BUTTON "nobtn"
+            "text" "No"
+            "width" 8
+   nocb @ address? if
+    "|buttonpress" nocb @
+   then
+            }CTRL
+    }DLOG
+    DESCR swap GUI_GENERATE
+    dup GUI_DLOG_SHOW
+;
+  
+: postyes_callback (intDescr strDlogID strCtrlId strEvent -- intExit)
+    pop pop
+ var vals GUI_VALUES_GET vals !
+ var dscr dscr !
+ 
+ "This is where I would post the message." dscr @ tell
+    vals @ foreach
+        swap "=" strcat dscr @ tell
+        foreach
+            "    " swap strcat dscr @ tell
+            pop
+        repeat
+    repeat
+ 0
+;
+  
+: writecancelyes_cb (intDescr strDlogID strCtrlId strEvent -- intExit)
+    pop pop GUI_VALUES_GET "data" [] 0 []
+ var write_dlog write_dlog !
+ write_dlog @ GUI_DLOG_CLOSE
+ { write_dlog @ 0 }dict
+ { }dict
+;
+  
+: gui_cancelwrite_cb (intDescr strDlogID strCtrlId strEvent -- dictGui dictOther)
+    pop pop var dlog dlog ! pop
+    {
+        dlog @ "Cancel new message"
+  "Are you sure you want to cancel this new message?"
+  'writecancelyes_cb 0 gen_yesno_dlog swap
+    }dict
+    { }dict
 ;
   
 : gen_writer_dlog ( -- dictHandlers strDlogId )
@@ -62,33 +126,77 @@ $def tell descrcon swap connotify
                 "sticky" "e"
                 "hweight" 1
                 "newline" 0
-                "|buttonpress" 'generic-handler
+                "|buttonpress" 'generic_handler
                 }CTRL
             {BUTTON "CancelBtn"
                 "text" "Cancel"
                 "width" 8
                 "sticky" "e"
-                "|buttonpress" 'cancelbtn-handler
+    "dismiss" 0
+                "|buttonpress" 'gui_cancelwrite_cb
                 }CTRL
         }CTRL
-        "|_closed|buttonpress" 'cancelbtn-handler
+        ( "|_closed|buttonpress" 'gui_cancelwrite_cb )
     }DLOG
     DESCR swap GUI_GENERATE
     dup GUI_DLOG_SHOW
 ;
- 
+  
 : gui_write_new_cb (intDescr strDlogID strCtrlId strEvent -- dictGui dictOther)
     pop pop pop pop
     { gen_writer_dlog swap }dict
     { }dict
 ;
- 
+  
+: protyes_callback (intDescr strDlogID strCtrlId strEvent -- intExit)
+    pop pop GUI_VALUES_GET "data" [] 0 []
+ "Message %s would have it's protection flag toggled here." fmtstring
+ swap tell
+ 0
+;
+  
+: gui_protectmsg_cb (intDescr strDlogID strCtrlId strEvent -- dictGui dictOther)
+    pop pop GUI_VALUES_GET "msgs" []
+    var msgnum 0 [] atoi msgnum !
+    pop
+    {
+        msgnum @ intostr "Message protection" msgnum @
+  "Are you sure you want to toggle message #%i's protection flag?"
+  fmtstring 'protyes_callback 0 gen_yesno_dlog swap
+    }dict
+    { }dict
+;
+  
+: delyes_callback (intDescr strDlogID strCtrlId strEvent -- intExit)
+    pop pop GUI_VALUES_GET "data" [] 0 []
+ "Message %s would be deleted here." fmtstring
+ swap tell
+ 0
+;
+  
+: gui_deletemsg_cb (intDescr strDlogID strCtrlId strEvent -- dictGui dictOther)
+    pop pop GUI_VALUES_GET "msgs" []
+    var msgnum 0 [] atoi msgnum !
+    pop
+    {
+        msgnum @ intostr "Delete message?" msgnum @
+  "Are you sure you want to delete message #%i?"
+  fmtstring 'delyes_callback 0 gen_yesno_dlog swap
+    }dict
+    { }dict
+;
+  
 : gen_reader_dlog ( -- dictHandlers strDlogId )
     {SIMPLE_DLOG "Read Messages"
         {LISTBOX "msgs"
             "value" "0"
             "sticky" "nswe"
-            "options" { "first" "second" "third" }list
+            "options" {
+                "Revar       Writing Gui Programs in MUF"
+                "Fre'ta      Scripting in Trebuchet"
+                "Points      Floating point error checking in MUF"
+            }list
+            "font" "fixed"
             "report" 1
             "height" 5
             "newline" 0
@@ -107,7 +215,7 @@ $def tell descrcon swap connotify
                 "width" 8
                 "sticky" "n"
                 "dismiss" 0
-                "|buttonpress" 'generic-handler
+                "|buttonpress" 'gui_deletemsg_cb
                 }CTRL
             {BUTTON "ProtectBtn"
                 "text" "Protect"
@@ -115,7 +223,7 @@ $def tell descrcon swap connotify
                 "sticky" "n"
                 "vweight" 1
                 "dismiss" 0
-                "|buttonpress" 'generic-handler
+                "|buttonpress" 'gui_protectmsg_cb
                 }CTRL
             }CTRL
         {FRAME "header"
@@ -148,12 +256,11 @@ $def tell descrcon swap connotify
             "toppad" 0
             "colspan" 2
             }CTRL
-        "|_closed|buttonpress" 'cancelbtn-handler
     }DLOG
     DESCR swap GUI_GENERATE
     dup GUI_DLOG_SHOW
 ;
- 
+  
 : gui_test
     pop
     DESCR GUI_AVAILABLE 0.0 > if
