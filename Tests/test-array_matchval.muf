@@ -1,4 +1,7 @@
-: test[ str:arg -- ]
+@program test-array_matchval
+1 9999 d
+1 i
+: test-array_matchval[ str:arg -- ]
     {
         "foo" "This is a"
         "pi" 3.14159
@@ -10,23 +13,20 @@
     "*i*"
     array_matchval
     dup array_count 2 = not if
-        "ARRAY_MATCHVAL: Wrong number of entries in result" abort
+        "Wrong number of entries in result" abort
     then
     dup "foo" [] "This is a" strcmp if
-        "ARRAY_MATCHVAL: String entry foo not found" abort
+        "String entry foo not found" abort
     then
     dup "nIne" [] "with a lock of" strcmp if
-        "ARRAY_MATCHVAL: String entry nIne not found" abort
+        "String entry nIne not found" abort
     then
     pop
     { }dict "" array_matchval
     array_count if
-        "ARRAY_MATCHVAL: Wrong number of entries in null list result." abort    
+        "Wrong number of entries in null list result." abort    
     then
-    "Succeeded: ARRAY_MATCHVAL" .tell
 ;
-
-
-
-
-
+.
+c
+q

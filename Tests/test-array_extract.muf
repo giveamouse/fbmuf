@@ -1,4 +1,7 @@
-: test[ str:arg -- ]
+@program test-array_extract
+1 9999 d
+1 i
+: test-array_extract[ str:arg -- ]
     {
         "foo" "This is a"
         "pi" 3.14159
@@ -15,13 +18,13 @@
     }list
     array_extract
     dup array_count 2 = not if
-        "ARRAY_EXTRACT: Wrong number of entries in result" abort
+        "Wrong number of entries in result" abort
     then
     dup "pi" [] 3.14159 = not if
-        "ARRAY_EXTRACT: String entry pi not found" abort
+        "String entry pi not found" abort
     then
     dup 3 [] "test for" strcmp if
-        "ARRAY_EXTRACT: Integer entry 3 not found" abort
+        "Integer entry 3 not found" abort
     then
     pop
     {
@@ -36,7 +39,7 @@
     }list
     array_extract
     dup array_count if
-        "ARRAY_EXTRACT: Wrong number of entries in null extract result" abort
+        "Wrong number of entries in null extract result" abort
     then
     pop
     {
@@ -46,10 +49,11 @@
     }list
     array_extract
     dup array_count if
-        "ARRAY_EXTRACT: Wrong number of entries in null array result" abort
+        "Wrong number of entries in null array result" abort
     then
     pop
-    "Succeeded: ARRAY_EXTRACT" .tell
 ;
-
+.
+c
+q
 

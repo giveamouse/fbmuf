@@ -1,4 +1,7 @@
-: test[ str:arg -- ]
+@program test-array_matchkey
+1 9999 d
+1 i
+: test-array_matchkey[ str:arg -- ]
     {
         "foo" "This is a"
         "pi" 3.14159
@@ -10,26 +13,23 @@
     "*i*"
     array_matchkey
     dup array_count 3 = not if
-        "ARRAY_MATCHKEY: Wrong number of entries in result" abort
+        "Wrong number of entries in result" abort
     then
     dup "pi" [] 3.14159 = not if
-        "ARRAY_MATCHKEY: String entry pi not found" abort
+        "String entry pi not found" abort
     then
     dup "eight" [] 8 = not if
-        "ARRAY_MATCHKEY: String entry eight not found" abort
+        "String entry eight not found" abort
     then
     dup "nIne" [] "with a lock of" strcmp if
-        "ARRAY_MATCHKEY: String entry nIne not found" abort
+        "String entry nIne not found" abort
     then
     pop
     { }dict "" array_matchkey
     array_count if
-        "ARRAY_MATCHKEY: Wrong number of entries in null list result." abort    
+        "Wrong number of entries in null list result." abort    
     then
-    "Succeeded: ARRAY_MATCHKEY" .tell
 ;
-
-
-
-
-
+.
+c
+q
