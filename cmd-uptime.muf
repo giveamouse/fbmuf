@@ -31,7 +31,7 @@ $endif
     dup starttime !
     systime swap -
     tzoffset - timesplit
-    yearday ! week ! 1970 - year ! month ! day ! hour ! minute ! second !
+    1 - yearday ! week ! 1970 - year ! month ! day ! hour ! minute ! second !
 
     ""
     year @ 0 > if year @ intostr strcat then
