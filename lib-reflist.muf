@@ -178,6 +178,7 @@ PUBLIC REF-first
 PUBLIC REF-next
 PUBLIC REF-list
 PUBLIC REF-inlist?
+PUBLIC REF-array
 PUBLIC REF-allrefs
 PUBLIC REF-filter (address objref reflistname -- refx...ref1 refcount)
 PUBLIC REF-editlist  (players? objref reflistname -- )
@@ -199,6 +200,7 @@ q
 @set $tmp/prog1=/_defs/REF-inlist?:"$lib/reflist" match "REF-inlist?" call
 @set $tmp/prog1=/_defs/REF-list:"$lib/reflist" match "REF-list" call
 @set $tmp/prog1=/_defs/REF-allrefs:"$lib/reflist" match "REF-allrefs" call
+@set $tmp/prog1=/_defs/REF-array:"$lib/reflist" match "REF-array" call
 @set $tmp/prog1=/_defs/REF-filter:"$lib/reflist" match "REF-filter" call
 @set $tmp/prog1=/_defs/REF-editlist:"$lib/reflist" match "REF-editlist" call
 @set $tmp/prog1=/_docs:@list $lib/reflist=1-46
