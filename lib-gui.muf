@@ -167,9 +167,9 @@
      A special key of " default" will be used if it exists, when a gui event
      comes in that does not match one of the more specific handlers.
      Gui callbacks are expected to have the signature:
-     [ dict:Context str:DlogID str:CtrlID str:GuiEventType -- int:ExitRequested ]
+        [ dict:Context str:DlogID str:CtrlID str:GuiEventType -- int:ExitRequested ]
      Error handler callbacks are expected to have the signature:
-     [ dict:Context str:DlogID str:CtrlID str:ErrText str:ErrCode -- int:ExitRequested ]
+        [ dict:Context str:DlogID str:CtrlID str:ErrText str:ErrCode -- int:ExitRequested ]
      The Context dictionaries will have the following entries:
          "descr"       the descriptor that the dialog was for.
          "dlogid"      the DlogID of the dialog that generated the event.
