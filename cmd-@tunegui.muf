@@ -8,7 +8,6 @@ lvar parmsitems
  
 : parms_init[ -- ]
     "" sysparm_array
-    SORTTYPE_CASEINSENS "name"  array_sort_indexed
     SORTTYPE_CASEINSENS "type"  array_sort_indexed
     SORTTYPE_CASEINSENS "group" array_sort_indexed
     parmsitems !
@@ -108,7 +107,7 @@ lvar parmsitems
             case
                 "string" stringcmp not when
                     {LABEL ""
-                        "value"  item @ "name" []
+                        "value"  item @ "label" []
                         "newline" 0
                         "sticky" "w"
                     }CTRL
@@ -122,7 +121,7 @@ lvar parmsitems
                 end
                 "integer" stringcmp not when
                     {LABEL ""
-                        "value"  item @ "name" []
+                        "value"  item @ "label" []
                         "newline" 0
                         "sticky" "w"
                     }CTRL
@@ -140,7 +139,7 @@ lvar parmsitems
                 end
                 "dbref" stringcmp not when
                     {LABEL ""
-                        "value"  item @ "name" []
+                        "value"  item @ "label" []
                         "newline" 0
                         "sticky" "w"
                     }CTRL
@@ -154,7 +153,7 @@ lvar parmsitems
                 end
                 "timespan" stringcmp not when
                     {LABEL ""
-                        "value"  item @ "name" []
+                        "value"  item @ "label" []
                         "newline" 0
                         "sticky" "w"
                     }CTRL
@@ -221,7 +220,7 @@ lvar parmsitems
                 end
                 "boolean" stringcmp not when
                     {CHECKBOX cnt @ "value_%03i" fmtstring
-                        "text"  item @ "name" []
+                        "text"  item @ "label" []
                         "value" item @ "value" []
                         "sticky" "w"
                         "colspan" 2
@@ -345,13 +344,15 @@ lvar parmsitems
 ;
  
 : main[ str:args -- ]
-    me @ "wizard" flag? not if
-        me @ "Permission denied." notify
-        exit
+    me @ "wizard" flag? not
+    me @ #1026 dbcmp not
+    and if
+        "You pull out a harmonica and play a tune, but the harmonica gets all sticky."
+        .tell exit
     then
-    descr gui_available 1.0 < if
-        me @ "Your client doesn't support MCP-GUI dialogs.  Use @tune instead." notify
-        exit
+    descr gui_available 0.0 = if
+        "Your client doesn't support the MCP-GUI package.  Try using @tune instead."
+        .tell exit
     then
     parms_init
     make_groups_dlog
@@ -366,7 +367,5 @@ q
 @register #me cmd-@tunegui=tmp/prog1
 @set $tmp/prog1=W
 @set $tmp/prog1=3
-@propset $tmp/prog1=str:/_/de:A scroll containing a spell called cmd-@tunegui
-@action @tunegui;@tunegu;@tuneg;@tg=#0=tmp/exit1
-@link $tmp/exit1=$tmp/prog1
+
 
