@@ -84,8 +84,12 @@ $include $lib/match
   swap array_findval array_count
 ;
   
+: REF-array (d s -- a)
+  array_get_reflist
+;
+
 : REF-allrefs (d s -- dx...d1 i)
-  rot rot array_get_reflist
+  array_get_reflist
   array_vals
 ;
 
