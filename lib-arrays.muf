@@ -6,8 +6,9 @@
   Author: Chris Brine [Moose/Van]
    Email: ashitaka@home.com
     Date: August 15th, 2000
-
+  
   Modified by Revar to take advantage of newer MUF primitives, etc.
+  Extended by Revar (foxen@belfry.com).
  
   Note: These were only made for string-list one-dimensional arrays,
         and not dictionaries or any other kind.
@@ -64,6 +65,26 @@
       i = Integer used for {delay} on whether it is shown to the player or room.
     ArrKey? [ a @ -- i ]
      - Checks to see if '@' is an index marker in the given array/dictionary.
+ 
+    ArrProcess [ dict:arr addr:func -- dict:result ]
+      - Runs every array element through a transforming function that can
+        change either the value or the index each item.  The function should
+        have the signature [ idx:index any:val -- idx:index' any:val' ]
+      arr    = initial array list/dictionary to process.
+      func   = address of function to call for each item
+      result = resulting array with each element transformed.
+
+    ArrFilter  [ dict:arr addr:func -- dict:passed dict:failed ]
+      - Runs a filtering function on every array item, sorting the given
+        array into two dictionaries:  Those items that passed the filter,
+        and those that didn't.  The filtering function should have the
+        signature [ idx:index any:val -- bool:passed ].  Both returned
+        arrays _will_ be dictionaries, with the keys of each filtered
+        array item matching those of the original array item.
+      arr    = initial array list/dictionary to filter.
+      func   = address of function to call for each item
+      passed = resulting array with each passing element.
+      failed = resulting array with each failing element.
 *)
  
 : ArrCommas ( a -- s )
@@ -161,12 +182,12 @@
 : ArrJoinRng[ arr:oldarr idx:startpos idx:endpos str:char -- arr:newarr ]
     oldarr @ array_count var! insize
     var newarr
-
+  
     oldarr @ -1 startpos @ -- array_getrange newarr !
-
+  
     oldarr @ startpos @ endpos @ array_getrange
     char @ array_join newarr @ array_appenditem newarr !
-
+  
     oldarr @ endpos @ ++ insize @ array_getrange
     newarr @ dup array_count swap array_setrange
 ;
@@ -203,7 +224,7 @@
     repeat
     -1
 ;
-
+  
  
 : ArrCopy ( a @1 @2 @3 -- a )
    var! arrpos
@@ -280,14 +301,35 @@ $endif
    then
 ;
  
-
+  
 (dir = 1 for forward, dir = 0 for reverse)
 : ArrSort[ arr:oldarr int:dir -- arr:newarr ]
     (FIXME: allow for lexical-numerical sorting)
     if SORTTYPE_CASE_ASCEND else SORTTYPE_CASE_DESCEND then
     array_sort
 ;
-
+  
+: ArrProcess ( dict:arr addr:func -- dict:result )
+    0 array_make swap
+    foreach
+        4 pick execute
+        rot rot array_setitem
+    repeat
+    swap pop
+;
+  
+: ArrFilter (dict:arr addr:func -- dict:result dict:remainder)
+    0 array_make_dict dup rot (addr arr' arr2' arr)
+    foreach                   (addr arr' arr2' idx val)
+        over over 7 pick execute if
+            4 rotate rot array_setitem swap
+        else
+            rot rot array_setitem
+        then
+    repeat
+    rot pop
+;
+  
 public ArrCommas ( a -- s )
 public ArrLeft ( a @1 @2 icol schar -- a )
 public ArrRight ( a @1 @2 icol schar -- a )
@@ -305,44 +347,55 @@ public ArrReplace ( a @1 @2 s1 s2 -- a )
 public ArrSort ( a i -- a )
 public ArrMPIparse ( d a @1 @2 s i -- a )
 public ArrKey? ( a @ -- i )
+  
+public ArrProcess ( dict:arr addr:func -- dict:result )
+public ArrFilter  ( dict:arr addr:func -- dict:result dict:remainder )
+  
+$lib-version 1.1
+  
+$pubdef ArrCommas    "$lib/arrays" match "ArrCommas" call
+$pubdef ArrLeft      "$lib/arrays" match "ArrLeft" call
+$pubdef ArrRight     "$lib/arrays" match "ArrRight" call
+$pubdef ArrCenter    "$lib/arrays" match "ArrCenter" call
+$pubdef ArrIndent    "$lib/arrays" match "ArrIndent" call
+$pubdef ArrFormat    "$lib/arrays" match "ArrFormat" call
+$pubdef ArrJoinRng   "$lib/arrays" match "ArrJoinRng" call
+$pubdef ArrList      "$lib/arrays" match "ArrList" call
+$pubdef ArrSearch    "$lib/arrays" match "ArrSearch" call
+$pubdef ArrCopy      "$lib/arrays" match "ArrCopy" call
+$pubdef ArrMove      "$lib/arrays" match "ArrMove" call
+$pubdef ArrPlaceItem "$lib/arrays" match "ArrPlaceItem" call
+$pubdef ArrShuffle   "$lib/arrays" match "ArrShuffle" call
+$pubdef ArrReplace   "$lib/arrays" match "ArrReplace" call
+$pubdef ArrSort      "$lib/arrays" match "ArrSort" call
+$pubdef ArrMPIparse  "$lib/arrays" match "ArrMPIparse" call
+$pubdef ArrKey?      "$lib/arrays" match "ArrKey?" call
+  
+$pubdef ArrProcess   "$lib/arrays" match "ArrProcess" call
+$pubdef ArrFilter    "$lib/arrays" match "ArrFilter" call
+  
+$pubdef Array_Commas    "$lib/arrays" match "ArrCommas" call
+$pubdef Array_Left      "$lib/arrays" match "ArrLeft" call
+$pubdef Array_Right     "$lib/arrays" match "ArrRight" call
+$pubdef Array_Center    "$lib/arrays" match "ArrCenter" call
+$pubdef Array_Indent    "$lib/arrays" match "ArrIndent" call
+$pubdef Array_Format    "$lib/arrays" match "ArrFormat" call
+$pubdef Array_JoinRng   "$lib/arrays" match "ArrJoinRng" call
+$pubdef Array_List      "$lib/arrays" match "ArrList" call
+$pubdef Array_Search    "$lib/arrays" match "ArrSearch" call
+$pubdef Array_Copy      "$lib/arrays" match "ArrCopy" call
+$pubdef Array_Move      "$lib/arrays" match "ArrMove" call
+$pubdef Array_PlaceItem "$lib/arrays" match "ArrPlaceItem" call
+$pubdef Array_Shuffle   "$lib/arrays" match "ArrShuffle" call
+$pubdef Array_Replace   "$lib/arrays" match "ArrReplace" call
+$pubdef Array_MPIparse  "$lib/arrays" match "ArrMPIparse" call
+  
+$pubdef Array_Process   "$lib/arrays" match "ArrProcess" call
+$pubdef Array_Filter    "$lib/arrays" match "ArrFilter" call
 .
 c
 q
 @register lib-arrays=lib/arrays
-@set $lib/arrays=_lib-version:1.1
 @set $lib/arrays=l
 @set $lib/arrays=m3
 @set $lib/arrays=v
-@set $lib/arrays=_Defs/ArrCommas:"$lib/arrays" match "ArrCommas" call
-@set $lib/arrays=_Defs/ArrLeft:"$lib/arrays" match "ArrLeft" call
-@set $lib/arrays=_Defs/ArrRight:"$lib/arrays" match "ArrRight" call
-@set $lib/arrays=_Defs/ArrCenter:"$lib/arrays" match "ArrCenter" call
-@set $lib/arrays=_Defs/ArrIndent:"$lib/arrays" match "ArrIndent" call
-@set $lib/arrays=_Defs/ArrFormat:"$lib/arrays" match "ArrFormat" call
-@set $lib/arrays=_Defs/ArrJoinRng:"$lib/arrays" match "ArrJoinRng" call
-@set $lib/arrays=_Defs/ArrList:"$lib/arrays" match "ArrList" call
-@set $lib/arrays=_Defs/ArrSearch:"$lib/arrays" match "ArrSearch" call
-@set $lib/arrays=_Defs/ArrCopy:"$lib/arrays" match "ArrCopy" call
-@set $lib/arrays=_Defs/ArrMove:"$lib/arrays" match "ArrMove" call
-@set $lib/arrays=_Defs/ArrPlaceItem:"$lib/arrays" match "ArrPlaceItem" call
-@set $lib/arrays=_Defs/ArrShuffle:"$lib/arrays" match "ArrShuffle" call
-@set $lib/arrays=_Defs/ArrReplace:"$lib/arrays" match "ArrReplace" call
-@set $lib/arrays=_Defs/ArrSort:"$lib/arrays" match "ArrSort" call
-@set $lib/arrays=_Defs/ArrMPIparse:"$lib/arrays" match "ArrMPIparse" call
-@set $lib/arrays=_Defs/ArrKey?:"$lib/arrays" match "ArrKey?" call
-@set $lib/arrays=_Defs/Array_Commas:"$lib/arrays" match "ArrCommas" call
-@set $lib/arrays=_Defs/Array_Left:"$lib/arrays" match "ArrLeft" call
-@set $lib/arrays=_Defs/Array_Right:"$lib/arrays" match "ArrRight" call
-@set $lib/arrays=_Defs/Array_Center:"$lib/arrays" match "ArrCenter" call
-@set $lib/arrays=_Defs/Array_Indent:"$lib/arrays" match "ArrIndent" call
-@set $lib/arrays=_Defs/Array_Format:"$lib/arrays" match "ArrFormat" call
-@set $lib/arrays=_Defs/Array_JoinRng:"$lib/arrays" match "ArrJoinRng" call
-@set $lib/arrays=_Defs/Array_List:"$lib/arrays" match "ArrList" call
-@set $lib/arrays=_Defs/Array_Search:"$lib/arrays" match "ArrSearch" call
-@set $lib/arrays=_Defs/Array_Copy:"$lib/arrays" match "ArrCopy" call
-@set $lib/arrays=_Defs/Array_Move:"$lib/arrays" match "ArrMove" call
-@set $lib/arrays=_Defs/Array_PlaceItem:"$lib/arrays" match "ArrPlaceItem" call
-@set $lib/arrays=_Defs/Array_Shuffle:"$lib/arrays" match "ArrShuffle" call
-@set $lib/arrays=_Defs/Array_Replace:"$lib/arrays" match "ArrReplace" call
-@set $lib/arrays=_Defs/Array_Sort:"$lib/arrays" match "ArrSort" call
-@set $lib/arrays=_Defs/Array_MPIparse:"$lib/arrays" match "ArrMPIparse" call
