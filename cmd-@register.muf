@@ -214,8 +214,11 @@ lvar regprop
         regobj @ regprop @ rot strcat list-props
         "Done." .tell exit
     then
-    "=" split strip dup not if "You must specify a registration name." .tell exit
-    swap strip dup not if pop  (Nothing to register; remove $regname)
+    "=" split strip
+    dup not if "You must specify a registration name." .tell exit then
+    swap strip
+    dup not if
+        pop  (Nothing to register; remove $regname)
         " " split if
             pop pop "You cannot have spaces in the registration name." .tell exit
         then
