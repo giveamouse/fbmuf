@@ -64,7 +64,7 @@ $include $lib/match
   dup rot array_findval
   0 []
   over swap array_next
-  if [] else pop #-1 then
+  if [] else pop pop #-1 then
 ;
   
 : REF-list  (objref reflistname -- liststr)
