@@ -82,16 +82,17 @@
     array_make var! range
     var subrng
  
+    (limit operations to the actual size of the range [pre FB6 compat])
+    pos @ num @ + range @ array_count - dup 0 > if
+        num @ swap - num !
+    else 
+        pop
+    then
+
     (avoid rangecheck errors to duplicate pre FB6 behaviour.) 
     num @ 0 <= range @ array_count pos @ < or if
         { }list subrng !
     else
-        (limit operations to the actual size of the range [pre FB6 compat])
-        pos @ num @ + range @ array_count - dup 0 > if
-            num @ swap - num !
-        else 
-            pop
-        then
         range @ pos @ dup num @ + 1 -
         array_getrange subrng !
         range @ pos @ dup num @ + 1 -
