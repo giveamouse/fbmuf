@@ -51,7 +51,6 @@ $endif
  
 : oktoname?[ ref:who dict:opts -- bool:isok ]
     opts @ "quell" [] not if
-        me @ #1026 dbcmp if 1 exit then
         me @ "w" flag? if 1 exit then
     then
     who @ namenever_prop getpropstr if 0 EXIT then
@@ -146,7 +145,6 @@ $endif
         wholoc @ WA_PROP getpropstr not if
             showall @ not
             me @ "wizard" flag? not
-            me @ #1026 dbcmp not and
             or if
                 continue
             then
