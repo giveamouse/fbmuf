@@ -4,12 +4,11 @@
 $include $lib/gui
 $def tell descrcon swap connotify
   
-: generic_handler (intDescr strDlogID strCtrlID strEvent -- intExit)
-    var guievent guievent !
-    var ctrlid ctrlid !
-    var dlogid dlogid !
-    var dscr dscr !
-    var vals dlogid @ GUI_VALUES_GET vals !
+: generic_handler[ int:dscr str:dlogid str:ctrlid str:guievent --
+                   int:ExitRequest ]
+  
+    dlogid @ GUI_VALUES_GET
+    var! vals
     
     guievent @ ctrlid @ "%s sent %s event!" fmtstring dscr @ tell 
   
@@ -23,16 +22,13 @@ $def tell descrcon swap connotify
     0
 ;
   
-: gen_yesno_dlog (strData strTitle strMessage addrYesCB addrNoCB -- dictHandlers strDlogId )
-    var nocb nocb !
-    var yescb yescb !
-    var text text !
-    var title title !
-    var mesgnum mesgnum !
+  
+: gen_yesno_dlog[ str:Data str:Title str:Text addr:YesCB addr:NoCB --
+                  dict:Handlers str:DlogId ]
   
     {SIMPLE_DLOG title @
         {DATUM "data"
-            "value" mesgnum @
+            "value" data @
             }CTRL
         {LABEL ""
             "value" text @
@@ -42,28 +38,30 @@ $def tell descrcon swap connotify
             "text" "Yes"
             "width" 8
             "newline" 0
-   yescb @ address? if
-    "|buttonpress" yescb @
-   then
+            yescb @ address? if
+                "|buttonpress" yescb @
+            then
             }CTRL
         {BUTTON "nobtn"
             "text" "No"
             "width" 8
-   nocb @ address? if
-    "|buttonpress" nocb @
-   then
+            nocb @ address? if
+                "|buttonpress" nocb @
+            then
             }CTRL
     }DLOG
     DESCR swap GUI_GENERATE
     dup GUI_DLOG_SHOW
 ;
   
-: postyes_callback (intDescr strDlogID strCtrlId strEvent -- intExit)
-    pop pop
- var vals GUI_VALUES_GET vals !
- var dscr dscr !
+  
+: postyes_callback[ int:Dscr str:DlogID str:CtrlId str:Event --
+                    int:ExitRequest ]
+  
+    dlogid @ GUI_VALUES_GET
+    var! vals
  
- "This is where I would post the message." dscr @ tell
+    "This is where I would post the message." dscr @ tell
     vals @ foreach
         swap "=" strcat dscr @ tell
         foreach
@@ -71,28 +69,35 @@ $def tell descrcon swap connotify
             pop
         repeat
     repeat
- 0
+    0
 ;
   
-: writecancelyes_cb (intDescr strDlogID strCtrlId strEvent -- intExit)
-    pop pop GUI_VALUES_GET "data" [] 0 []
- var write_dlog write_dlog !
- write_dlog @ GUI_DLOG_CLOSE
- { write_dlog @ 0 }dict
- { }dict
+  
+: writecancelyes_cb[ int:Dscr str:DlogID str:CtrlId str:Event --
+                     dict:GuiHandlerChanges dict:OtherHandlerChanges ]
+  
+    dlogid @ GUI_VALUES_GET "data" [] 0 []
+    var! write_dlog
+  
+    write_dlog @ GUI_DLOG_CLOSE
+    { write_dlog @ 0 }dict         (Tell caller to forget this dialog.)
+    { }dict
 ;
   
-: gui_cancelwrite_cb (intDescr strDlogID strCtrlId strEvent -- dictGui dictOther)
-    pop pop var dlog dlog ! pop
+  
+: gui_cancelwrite_cb[ int:Dscr str:DlogID str:CtrlId str:Event --
+                     dict:GuiHandlerChanges dict:OtherHandlerChanges ]
+  
     {
-        dlog @ "Cancel new message"
-  "Are you sure you want to cancel this new message?"
-  'writecancelyes_cb 0 gen_yesno_dlog swap
+        dlogid @ "Cancel new message"
+        "Are you sure you want to cancel this new message?"
+        'writecancelyes_cb 0 gen_yesno_dlog swap
     }dict
     { }dict
 ;
   
-: gen_writer_dlog ( -- dictHandlers strDlogId )
+  
+: gen_writer_dlog[ -- dict:Handlers str:DlogId ]
     {SIMPLE_DLOG "Post Message"
         {LABEL ""
             "value" "Subject"
@@ -132,7 +137,7 @@ $def tell descrcon swap connotify
                 "text" "Cancel"
                 "width" 8
                 "sticky" "e"
-    "dismiss" 0
+                "dismiss" 0
                 "|buttonpress" 'gui_cancelwrite_cb
                 }CTRL
         }CTRL
@@ -142,51 +147,68 @@ $def tell descrcon swap connotify
     dup GUI_DLOG_SHOW
 ;
   
-: gui_write_new_cb (intDescr strDlogID strCtrlId strEvent -- dictGui dictOther)
-    pop pop pop pop
+  
+: gui_write_new_cb[ int:Dscr str:DlogID str:CtrlId str:Event --
+                     dict:GuiHandlerChanges dict:OtherHandlerChanges ]
+  
     { gen_writer_dlog swap }dict
     { }dict
 ;
   
-: protyes_callback (intDescr strDlogID strCtrlId strEvent -- intExit)
-    pop pop GUI_VALUES_GET "data" [] 0 []
- "Message %s would have it's protection flag toggled here." fmtstring
- swap tell
- 0
+  
+: protyes_callback[ int:dscr str:dlogid str:ctrlid str:guievent --
+                   int:ExitRequest ]
+  
+    dlogid @ GUI_VALUES_GET "data" [] 0 []
+    "Message %s would have it's protection flag toggled here." fmtstring
+    dscr @ tell
+    0
 ;
   
-: gui_protectmsg_cb (intDescr strDlogID strCtrlId strEvent -- dictGui dictOther)
-    pop pop GUI_VALUES_GET "msgs" []
-    var msgnum 0 [] atoi msgnum !
-    pop
+  
+: gui_protectmsg_cb[ int:Dscr str:DlogID str:CtrlId str:Event --
+                     dict:GuiHandlerChanges dict:OtherHandlerChanges ]
+  
+    dlogid @ GUI_VALUES_GET "msgs" [] 0 [] atoi
+    var! msgnum
     {
-        msgnum @ intostr "Message protection" msgnum @
-  "Are you sure you want to toggle message #%i's protection flag?"
-  fmtstring 'protyes_callback 0 gen_yesno_dlog swap
+        msgnum @ intostr
+        "Message protection"
+        msgnum @
+        "Are you sure you want to toggle message #%i's protection flag?"
+        fmtstring
+        'protyes_callback 0
+        gen_yesno_dlog swap
     }dict
     { }dict
 ;
   
-: delyes_callback (intDescr strDlogID strCtrlId strEvent -- intExit)
-    pop pop GUI_VALUES_GET "data" [] 0 []
- "Message %s would be deleted here." fmtstring
- swap tell
- 0
+  
+: delyes_callback[ int:dscr str:dlogid str:ctrlid str:guievent --
+                   int:ExitRequest ]
+  
+    dlogid @ GUI_VALUES_GET "data" [] 0 []
+    "Message %s would be deleted here." fmtstring
+    dscr @ tell
+    0
 ;
   
-: gui_deletemsg_cb (intDescr strDlogID strCtrlId strEvent -- dictGui dictOther)
-    pop pop GUI_VALUES_GET "msgs" []
-    var msgnum 0 [] atoi msgnum !
-    pop
+  
+: gui_deletemsg_cb[ int:Dscr str:DlogID str:CtrlId str:Event --
+                     dict:GuiHandlerChanges dict:OtherHandlerChanges ]
+  
+    dlogid @ GUI_VALUES_GET "msgs" [] 0 [] atoi
+    var! msgnum
     {
         msgnum @ intostr "Delete message?" msgnum @
-  "Are you sure you want to delete message #%i?"
-  fmtstring 'delyes_callback 0 gen_yesno_dlog swap
+        "Are you sure you want to delete message #%i?"
+        fmtstring 'delyes_callback 0 gen_yesno_dlog swap
     }dict
     { }dict
 ;
   
-: gen_reader_dlog ( -- dictHandlers strDlogId )
+  
+: gen_reader_dlog[ -- dict:Handlers str:DlogId ]
     {SIMPLE_DLOG "Read Messages"
         {LISTBOX "msgs"
             "value" "0"
@@ -261,8 +283,8 @@ $def tell descrcon swap connotify
     dup GUI_DLOG_SHOW
 ;
   
-: gui_test
-    pop
+  
+: gui_test[ str:cmdline -- ]
     DESCR GUI_AVAILABLE 0.0 > if
         background
         {
