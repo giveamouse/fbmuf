@@ -134,10 +134,21 @@
          "colskip"    Number of columns to skip before placing this control.
          "colspan"    Number of columns this control's cell will span across.
          "rowspan"    Number of rows this control's cell will span across.
+         "column"     Column number to put this control into.  First is 0.
+         "row"        Row number to put this control into.  First is 0.
          "toppad"     Number of pixels to pad above the current row.
          "leftpad"    Number of pixels to pad to the left of the current col.
          "vweight"    Specifies the expansion ratio for the current row.
          "hweight"    Specifies the expansion ratio for the current column.
+  
+     Note that "row" and "column" are not usually necessary, if you create
+     the controls from left to right, top to bottom.  You can simply keep
+     laying out the next control in the next logical position.  When you
+     specify the "newline" option to 1, the next position is automatically
+     the first column of the next row.  If you don't specify "newline" or
+     it is 0, then the next logical position is the column to the right of
+     the current control's rightmost column.  (as modified by "colspan".)
+     MENU controls do not require layout options.
   
   
   GUI_DLOG_REGISTER[ str:dlogid dict:handlers -- ]
@@ -209,6 +220,19 @@
          1. The dictionary of context data returned by EVENT_WAIT for the
              event that triggered the exiting.
          2. The event string returned by EVENT_WAIT.
+  
+  
+  GUI_MESSAGEBOX[ str:title str:text list:buttons dict:opts -- str:button ]
+     Creates a dialog box with the given title and caption text, containing
+     one or more buttons with the given names.  The options dictionary is
+     for more obscure options for the dialog.  The currently supported
+     options are:
+  
+        "default" to specify which button should be the default button.  
+  
+     The MUF program will pause and wait for one of the buttons to be pressed.
+     When a button is pressed, this call will return with a string that is
+     the name that was displayed on the button that was pressed.
 )
  
 $def }join }list "" array_join 
@@ -655,12 +679,11 @@ PUBLIC events_registered
 ;
 PUBLIC gui_event_process
  
- 
 : _gui_messagebox_cb[ int:dscr str:dlogid str:ctrlid str:event -- int:exit ]
     1
 ;
  
-: GUI_MESSAGEBOX[ str:title str:text list:buttons -- str:buttonpressed ]
+: GUI_MESSAGEBOX[ str:title str:text list:buttons dict:opts -- str:buttonpressed ]
     0 var! maxlen
     buttons @
     foreach
@@ -671,24 +694,40 @@ PUBLIC gui_event_process
         then
         pop
     repeat
-    maxlen @ 4 + maxlen !
+    maxlen @ 2 + maxlen !
+    maxlen @ 8 * 50 + buttons @ array_count * var! estwidth
+    estwidth @ 300 < if 300 estwidth ! then
+    
+    { }dict var! buttonmap
  
     { D_SIMPLE title @
         { C_LABEL ""
             "value" text @
+            "maxwidth" estwidth @
             }list
+        { C_HRULE "" }list
         { C_FRAME "_bfr"
             "sticky" "sew"
             buttons @
             foreach
-                swap pop
+                var! btext
+                var! bnum
+                "_btn" bnum @ intostr strcat
                 var! bname
+                btext @ buttonmap @ bname @ array_setitem
+                buttonmap !
                 { C_BUTTON bname @
-                    "text" bname @
+                    "text" btext @
                     "width" maxlen @
                     "newline" 0
                     "sticky" ""
                     "hweight" 1
+                    opts @ "default" [] dup if
+                        btext @ strcmp not if
+                            "default" 1
+                        then
+                    else pop
+                    then
                     "|buttonpress" '_gui_messagebox_cb
                     }list
             repeat
@@ -700,12 +739,14 @@ PUBLIC gui_event_process
     "GUI." swap strcat
     1 array_make event_waitfor
     pop "id" []
+    buttonmap @ swap array_getitem
 ;
 PUBLIC gui_messagebox
 .
 c
 q
 @register lib-gui=lib/gui
+@register #me lib-gui=tmp/prog1
 @register #me lib-gui=tmp/prog1
 @set $tmp/prog1=L
 @set $tmp/prog1=S
