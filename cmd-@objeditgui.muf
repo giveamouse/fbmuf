@@ -403,7 +403,8 @@ $def yesprop? getpropstr 1 strcut pop "y" stringcmp not
 : options_data[ dbref:obj -- arr:data ]
     {
         { (Name group)
-            "group"  "Main"
+            "group"  "Basics"
+            "grouplabel" "Name, Password, Gender, Species, Home, etc."
             "name"   "@name"
             "type"   "string"
             obj @ player? if
@@ -420,7 +421,7 @@ $def yesprop? getpropstr 1 strcut pop "y" stringcmp not
         }dict
         obj @ player? if
             {
-                "group"  "Main"
+                "group"  "Basics"
                 "name"   "@password"
                 "type"   "password"
                 "label"  "Password (for name change)"
@@ -430,7 +431,7 @@ $def yesprop? getpropstr 1 strcut pop "y" stringcmp not
             }dict
             (
             {
-                "group"  "Main"
+                "group"  "Basics"
                 "name"   "user_newpass"
                 "type"   "password"
                 "label"  "New Password"
@@ -438,7 +439,7 @@ $def yesprop? getpropstr 1 strcut pop "y" stringcmp not
                 "value"  ""
             }dict
             {
-                "group"  "Main"
+                "group"  "Basics"
                 "name"   "user_newpass2"
                 "type"   "password"
                 "label"  "Verify New Password"
@@ -448,7 +449,7 @@ $def yesprop? getpropstr 1 strcut pop "y" stringcmp not
             }dict
             )
             {
-                "group"  "Main"
+                "group"  "Basics"
                 "name"   GENDER_PROP
                 "type"   "option"
                 "label"  "Character gender"
@@ -459,7 +460,7 @@ $def yesprop? getpropstr 1 strcut pop "y" stringcmp not
                 "value"  obj @ GENDER_PROP getpropstr
             }dict
             {
-                "group"  "Main"
+                "group"  "Basics"
                 "name"   SPECIES_PROP
                 "type"   "option"
                 "label"  "Character species"
@@ -470,7 +471,7 @@ $def yesprop? getpropstr 1 strcut pop "y" stringcmp not
                 "value"  obj @ SPECIES_PROP getpropstr
             }dict
             {
-                "group"  "Main"
+                "group"  "Basics"
                 "name"   FLIGHT_PROP
                 "type"   "boolean"
                 "label"  "Character can fly"
@@ -479,7 +480,7 @@ $def yesprop? getpropstr 1 strcut pop "y" stringcmp not
                 "value"  obj @ FLIGHT_PROP yesprop?
             }dict
             {
-                "group"  "Main"
+                "group"  "Basics"
                 "name"   "Jump_OK"
                 "type"   "boolean"
                 "label"  "Character can throw things"
@@ -488,7 +489,7 @@ $def yesprop? getpropstr 1 strcut pop "y" stringcmp not
                 "value"  obj @ "jump_ok" flag?
             }dict
             {
-                "group"  "Main"
+                "group"  "Basics"
                 "name"   HAND_PROP
                 "type"   "boolean"
                 "label"  "Character can hand/be handed things"
@@ -499,7 +500,7 @@ $def yesprop? getpropstr 1 strcut pop "y" stringcmp not
         then
         obj @ program? not if
             {
-                "group"  "Main"
+                "group"  "Basics"
                 "name"   "@link"
                 obj @ case
                     player? when
@@ -544,6 +545,7 @@ $def yesprop? getpropstr 1 strcut pop "y" stringcmp not
  
         { (Description group)
             "group"  "Desc"
+            "grouplabel" "Description and Look-notify."
             "name"   "@desc"
             "type"   "multistring"
             "label"  "Description"
@@ -570,6 +572,7 @@ $def yesprop? getpropstr 1 strcut pop "y" stringcmp not
         obj @ player? if
             { (Say group)
                 "group"  "Say"
+                "grouplabel" "Speech formatting and options."
                 "name"   SAY_PROP
                 "type"   "string"
                 "label"  "When you speak, you see:     You"
@@ -609,6 +612,7 @@ $def yesprop? getpropstr 1 strcut pop "y" stringcmp not
  
             { (Sweep group)
                 "group"  "Sweep"
+                "grouplabel" "Sweep messages and options."
                 "name"   SWEEP_PROP
                 "type"   "multistring"
                 "label"  obj @ "When you sweep the room, it says:  %D..." fmtstring
@@ -644,6 +648,7 @@ $def yesprop? getpropstr 1 strcut pop "y" stringcmp not
  
         { (smell group)
             "group"  "Smell"
+            "grouplabel" "Smell messages and options."
             "name"   SCENT_PROP
             "type"   "multistring"
             obj @ player? if
@@ -680,6 +685,7 @@ $def yesprop? getpropstr 1 strcut pop "y" stringcmp not
             var! pronouns_help
             { (Success group)
                 "group"  "Succ"
+                "grouplabel" "Success messages."
                 "name"   "@success"
                 "type"   "multistring"
                 obj @ case
@@ -722,6 +728,7 @@ $def yesprop? getpropstr 1 strcut pop "y" stringcmp not
             }dict
             { (Fail group)
                 "group"  "Fail"
+                "grouplabel" "Fail messages."
                 "name"   "@fail"
                 "type"   "multistring"
                 obj @ case
@@ -764,6 +771,7 @@ $def yesprop? getpropstr 1 strcut pop "y" stringcmp not
             }dict
             { (Drop group)
                 "group"  "Drop"
+                "grouplabel" "Drop messages."
                 "name"   "@drop"
                 "type"   "multistring"
                 obj @ case
@@ -809,6 +817,7 @@ $def yesprop? getpropstr 1 strcut pop "y" stringcmp not
         ( Flags.  Commented out for now.
         {
             "group"  "Flags"
+            "grouplabel" "Flag settings [A to K]."
             "name"   "flag_a"
             "type"   "boolean"
             "label"  "Abode"
@@ -865,6 +874,7 @@ $def yesprop? getpropstr 1 strcut pop "y" stringcmp not
         }dict
         {
             "group"  "More Flags"
+            "grouplabel" "More flag settings [L to Z]."
             "name"   "flag_l"
             "type"   "boolean"
             "label"  "Link_ok"
@@ -934,11 +944,6 @@ $def yesprop? getpropstr 1 strcut pop "y" stringcmp not
     args @ .match_controlled
     dup not if pop exit then
     var! targ
- 
-    descr gui_available 1.0 < if
-        "You need a client that can support MCP-GUI dialogs to run this program."
-        me @ swap notify exit
-    then
  
     {
         "target" targ @

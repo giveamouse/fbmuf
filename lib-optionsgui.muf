@@ -19,17 +19,17 @@
 (     Made dbref options use combobox.                             )
 ( v1.103 --  8/29/2002 -- Revar <revar@belfry.com>                 )
 (     Made dbref options update combobox with matched object name. )
-  
+
 $author Revar Desmera <revar@belfry.com>
 $version 1.103
 $lib-version 1.101
 $note Released under the LGPL.
-  
+
 (
-  
+
     GUI_OPTIONS_GENERATE[ int:dscr  any:caller_ctx  addr:saveall_cb
-                          str:title arr:optionsinfo -- int:opts_id ]
- 
+                        str:title arr:optionsinfo -- int:opts_id ]
+
         Generates a dialog or set of dialogs that will edit a set of options
         that are described by the optionsinfo array.  The dialog[s] will be
         created with the given title root, and displayed to the given dscr
@@ -40,60 +40,60 @@ $note Released under the LGPL.
         will be passed to any callback routines that are called.  This can
         be whatever single stack item the caller program wants to pass,
         including an array or dictionary.
- 
+
         This function will return the opts_id of the current options set.
         You must call GUI_OPTIONS_FREE with this opts_id after all the
         dialogs have been closed.
-  
+
         The format of the data in the optionsinfo array is a list of
         optioninfo description dictionaries.  Each optioninfo description
         can have the following fields:
- 
+
             "group"    The name of the option group to group this option with.
-                         This field is required.
+                        This field is required.
             "name"     The name of this option, used to refer to its data.
-                         This field is required.
+                        This field is required.
             "type"     The type of this option.  May be one of "label",
-                         "string", "password", "multistring", "boolean",
-                         "integer", "float", "dbref", "dbreflist", "timespan",
-                         "option" or "custom".  This field is required.
+                        "string", "password", "multistring", "boolean",
+                        "integer", "float", "dbref", "dbreflist", "timespan",
+                        "option" or "custom".  This field is required.
             "label"    The short text to label this option with.  Required.
             "help"     The human readable long help text for this option.
             "value"    The actual current value of this option.  Required.
             "minval"   For numeric options, the minimum legal value.
-                         If not given, assumes 0.
+                        If not given, assumes 0.
             "maxval"   For numeric options, the maximum legal value.
-                         If not given, assumes 99999999.
+                        If not given, assumes 99999999.
             "digits"   For float options, the number of significant digits.
-                         If not given, assumes 0.
+                        If not given, assumes 0.
             "resolution" For float options, this specifies the smallest change
-                         that can be made to the value.
+                        that can be made to the value.
             "options"  For option options, gives list of predefined values.
-                         This is required for options of type option.
+                        This is required for options of type option.
             "editable" For option options, if true, user can give arbitrary
-                         values that aren't in the predefined value set.
-                         If not given, assumes not editable.
+                        values that aren't in the predefined value set.
+                        If not given, assumes not editable.
             "objtype"  For dbref options, lists the allowed object types.
-                         This is a list array of strings of valid types, and
-                         can contain "any", "bad", "garbage", "player", "room",
-                         "exit", "program", "thing", "zombie", and "vehicle".
-                         If "thing" is given, "zombie" and "vehicle" are ok.
-                         If not given, assumes any object type is ok.
+                        This is a list array of strings of valid types, and
+                        can contain "any", "bad", "garbage", "player", "room",
+                        "exit", "program", "thing", "zombie", and "vehicle".
+                        If "thing" is given, "zombie" and "vehicle" are ok.
+                        If not given, assumes any object type is ok.
             "create_cb" For custom options, this is the address of the
-                         function to call to get the controls description
-                         used to created the controls needed by this custom
-                         option.
+                        function to call to get the controls description
+                        used to created the controls needed by this custom
+                        option.
             "vfy_cb"   Optional address of function to call back to verify
-                         the value of this option before saving it.
+                        the value of this option before saving it.
             "save_cb"  Optional address of function to call back when saving
-                         the value of this option via Apply or Done.
- 
+                        the value of this option via Apply or Done.
+
         When the dialog is created, the options will be re-ordered by group
         name.  The order of the options within each group will be determined
         by the order that they were given in the optionsinfo list.
- 
+
         An optionsinfo list may look like:
- 
+
             {
                 {
                     "group"  "Self Destruct"
@@ -195,28 +195,28 @@ $note Released under the LGPL.
                     "value"     0
                 }dict
             }list
- 
+
         The create_cb field above should contain the address of a function
         that has the following signature:
             [ int:dscr any:context -- arr:ctrlsdescr ]
         The return value should be a valid $lib/gui control set description
         array with all neccesary callbacks, etc.
- 
+
         The save_cb and vfy_cb fields above should contain the address of a
         function that has the following signature:
             [ dict:extradata str:optname any:value -- str:errs ]
- 
+
         The extradata dictionary contains the following extra data:
             "descr"        The descriptor the dialog was displayed to.
             "dlogid"       The dialog's ID.
             "context"      The caller's context data.
             "optionsinfo"  Information on all the other options.
- 
+
         The save_cb callback will only be called if the associated value
         has changed [or is a custom option] and Apply or Done were clicked.
         The vfy_cb callbacks will always be called when Apply or Done are
         clicked, regardless of whether the value has changed or not.
- 
+
         The saveall_cb argument to GUI_OPTIONS_PROCESS is a callback function
         address that is called after all the option specific save_cb call-
         backs have been done.  This callback will only be called if all
@@ -234,7 +234,7 @@ $note Released under the LGPL.
         option will be in the "oldvalue" field.  The new value will be
         in the "value" field.  If the value changed, the "changed" field
         will be set to 1.
- 
+
         ie:  The value of the optionsinfo argument may look like this:
             {
                 "base_location" {
@@ -264,385 +264,45 @@ $note Released under the LGPL.
         If the save was successful, the save and verify callback functions
         should return with a null string.  If there was an error, then the
         human readable error messages should be returned in a single string.
- 
- 
- 
+
+
+
     GUI_OPTIONS_VALUE_SET[ int:opts_id str:optname any:value -- ]
         Sets the value of the given option within the gui option editor
         specified by opts_id.  This change will be shown to the user in
         any gui option editor dialogs she may have up at the moment.
- 
- 
- 
+
+
+
     GUI_OPTIONS_FREE[ int:opts_id -- ]
         Frees up all internal memory associated with the gui options editor.
- 
- 
- 
+
+
+
     GUI_OPTIONS_PROCESS[ int:dscr  any:caller_ctx  addr:saveall_cb
-                         str:title  arr:optionsinfo -- ]
- 
+                        str:title  arr:optionsinfo -- ]
+
         GUI_OPTIONS_PROCESS will call GUI_OPTIONS_GENERATE, go into the
         background, wait for the user to dismiss the dialogs it creates,
         then call GUI_OPTIONS_FREE and return.
-  
+
 )
-  
-  
+
+
 $include $lib/case
 $include $lib/gui
- 
+$include $lib/optionsinfo
+$include $lib/optionsmisc
+$include $lib/optionsmenu
+
 $def DEFAULT_CAPTION "Edit the following data and click on 'Done' or 'Apply' to commit the changes."
-  
+
 ( ------------------------------------------------------------- )
- 
- 
-: filter_my_array[ list:arr str:field str:val -- list:arr ]
-    { }list var! out
-    arr @ foreach swap pop
-        dup field @ []
-        val @ stringcmp not if
-            out @ array_appenditem out !
-        else pop
-        then
-    repeat
-    out @
-;
-  
- 
-: equalvals?[ any:val1 any:val2 -- bool:equal ]
-    { val1 @ }list
-    { val2 @ }list
-    array_compare not
-;
- 
- 
-: timespan2str[ int:timespan -- str:result ]
-    {
-    "%id %02i:%02i:%02i"
-    timespan @
-    dup 86400 / swap 86400 %
-    dup 3600 / swap 3600 %
-    dup 60 / swap 60 %
-    } reverse fmtstring
-;
- 
- 
-: objtype_normalize[ validtypes -- list:validtyes ]
-    validtypes @
-    dup not if
-        pop "any"
-    then
-    dup string? if
-        { swap }list
-    then
-    dup "any" array_matchval if
-        { "room" "thing" "exit" "player" "program" "garbage" "bad" }list array_union
-    then
-    dup "room" array_matchval if
-        "abode"  swap array_appenditem
-    then
-    dup "thing" array_matchval if
-        "zombie"  swap array_appenditem
-        "vehicle" swap array_appenditem
-    then
-;
- 
- 
-: objtype_check[ int:dscr ref:obj dict:item -- str:errs ]
-    dscr @ descrdbref var! who
-    item @ "label" [] var! label
-    item @ "objtype" [] objtype_normalize dup var! validtypes
-    obj @ case
-        #-1 dbcmp when "nothing" array_matchval end
-        #-3 dbcmp when "home"    array_matchval end
-        ok? not   when "bad"     array_matchval end
-        exit?     when "exit"    array_matchval end
-        player?   when "player"  array_matchval end
-        program?  when "program" array_matchval end
-        room?     when
-            0
-            obj @ "a" flag? if over "abode" array_matchval or then
-            over "room" array_matchval or
-            swap pop
-        end
-        thing?    when
-            0
-            obj @ "z" flag? if over "zombie"  array_matchval or then
-            obj @ "v" flag? if over "vehicle" array_matchval or then
-            over "thing" array_matchval or
-            swap pop
-        end
-        default pop "garbage" array_matchval end
-    endcase
-    not if
-        {
-            "'%s' must be one of the following types: %s"
-            label @
-            validtypes @ ", " array_join
-        } reverse fmtstring
-        exit
-    then
-    obj @ ok? if
-        item @ "linkable" [] if
-            who @ obj @ controls not
-            obj @ "L" flag? not and
-            obj @ "A" flag? obj @ room? and not and
-            if
-                {
-                    "'%s' must be an object you can link to."
-                    label @
-                } reverse fmtstring
-                exit
-            then
-        then
-        item @ "control" [] if
-            obj @ who @ controls not if
-                {
-                    "'%s' must be an object you control."
-                    label @
-                } reverse fmtstring
-                exit
-            then
-        then
-    then
-    ""
-;
- 
- 
-: dbref_option_list[ int:dscr list:item -- list:objstrs ]
-    dscr @ descrdbref var! who
-    { }list var! out
- 
-    ( Me, Here, and Home )
-    dscr @ who @ item @ objtype_check not if
-        "Me" out @ array_appenditem out !
-    then
-    dscr @ who @ location item @ objtype_check not if
-        "Here" out @ array_appenditem out !
-    then
-    dscr @ #-1 item @ objtype_check not if
-        "*NOTHING* (#-1)" out @ array_appenditem out !
-    then
-    dscr @ #-3 item @ objtype_check not if
-        "*HOME* (#-3)" out @ array_appenditem out !
-    then
- 
-    ( Player's inventory )
-    who @ contents_array
-    foreach swap pop
-        dscr @ over item @ objtype_check not if
-            unparseobj out @ array_appenditem out !
-        else pop
-        then
-    repeat
- 
-    ( Room contents )
-    who @ location contents_array
-    foreach swap pop
-        dscr @ over item @ objtype_check not if
-            unparseobj out @ array_appenditem out !
-        else pop
-        then
-    repeat
- 
-    ( Environment rooms )
-    who @ location location
-    begin
-        dup while
-        dscr @ over item @ objtype_check not if
-            dup unparseobj out @ array_appenditem out !
-        then
-        location
-    repeat pop
- 
-    ( Player exits )
-    who @ exits_array
-    foreach swap pop
-        dscr @ over item @ objtype_check not if
-            unparseobj out @ array_appenditem out !
-        else pop
-        then
-    repeat
- 
-    ( Room exits )
-    who @ location exits_array
-    foreach swap pop
-        dscr @ over item @ objtype_check not if
-            unparseobj out @ array_appenditem out !
-        else pop
-        then
-    repeat
- 
-    out @
-;
- 
- 
-: dbref_unparse[ int:dscr ref:obj -- str:objstr ]
-    dscr @ descrdbref var! who
-    obj @ ok? if
-        obj @ player? if
-            obj @ who @ dbcmp if
-                "Me" exit
-            else
-                "*" obj @ name strcat exit
-            then
-        then
-        obj @ who @ location dbcmp if
-            "Here" exit
-        then
-        dscr @ descrdbref obj @ controls if
-            obj @ unparseobj exit
-        then
-        obj @ name exit
-    then
-    obj @ #-1 dbcmp if
-        "*NOTHING* (#-1)" exit
-    then
-    obj @ #-3 dbcmp if
-        "*HOME* (#-3)" exit
-    then
-    obj @ int "#%i" fmtstring
-;
- 
- 
-: dbref_parse[ str:objstr int:dscr -- ref:obj ]
-    dscr @ descrdbref var! who
-    objstr @ "me" stringcmp not if who @ exit then
-    objstr @ "here" stringcmp not if who @ location exit then
-    objstr @ not if #-1 exit then
-    objstr @ match
-    dup int 0 >= if exit then
-    dup #-2 dbcmp if exit then
-    pop
-    objstr @ "*(#[0-9]*)" smatch if
-        objstr @ "(#" rsplit swap pop ")" rsplit pop
-        dup 1 strcut pop number? if
-            atoi dbref exit
-        else pop
-        then
-    then
-    #-1
-;
- 
- 
-( ------------------------------------------------------------- )
- 
- 
-lvar opts_info_arr
-lvar opts_groupsorder_arr
-lvar opts_grouporder_arr
-lvar opts_info_topnum
- 
-: optionsinfo_get[ int:id -- arr:optionsinfo ]
-    opts_info_arr @ not if { }dict opts_info_arr ! then
- 
-    opts_info_arr @
-    dup not if pop { }dict then
-    id @ []
-    dup not if pop { }dict then
-;
- 
- 
-: optionsinfo_getgroups[ int:id -- list:groups ]
-    opts_groupsorder_arr @ not if { }dict opts_groupsorder_arr ! then
- 
-    opts_groupsorder_arr @ id @ []
-    dup not if pop { }list then
-;
- 
- 
-: optionsinfo_get_group_opts[ int:id str:group -- list:optnames ]
-    opts_grouporder_arr @ not if { }dict opts_grouporder_arr ! then
- 
-    opts_grouporder_arr @ id @ []
-    dup not if pop { }list then
-    group @ []
-    dup not if pop { }list then
-;
- 
- 
-: optionsinfo_set[ int:id arr:optionsinfo -- ]
-    opts_info_arr @ not if { }dict opts_info_arr ! then
-    opts_groupsorder_arr @ not if { }dict opts_groupsorder_arr ! then
-    opts_grouporder_arr @ not if { }dict opts_grouporder_arr ! then
- 
-    { }dict var! reindexed
-    { }list var! groups
-    { }dict var! grouporder
- 
-    optionsinfo @ foreach var! iteminfo pop
-        iteminfo @ "name"  [] var! optname
-        iteminfo @ "group" [] var! group
- 
-        groups @ group @ array_findval not if
-            group @ groups @ array_appenditem groups !
-        then
- 
-        grouporder @ group @ []
-        dup not if pop { }list then
-        optname @ swap array_appenditem
-        grouporder @ group @ ->[] grouporder !
- 
-        iteminfo @ reindexed @ optname @ ->[] reindexed !
-    repeat
- 
-    opts_info_arr @
-    reindexed @ swap id @ ->[]
-    opts_info_arr !
- 
-    groups @ opts_groupsorder_arr @ id @ ->[] opts_groupsorder_arr !
-    grouporder @ opts_grouporder_arr @ id @ ->[] opts_grouporder_arr !
-;
- 
- 
-: optionsinfo_new[ arr:optionsinfo -- int:id ]
-    opts_info_topnum dup ++ @ var! id
-    id @ optionsinfo @ optionsinfo_set
-    id @
-;
- 
- 
-: optioninfo_get[ int:id str:optname -- arr:optinfo ]
-    opts_info_arr @ not if { }dict opts_info_arr ! then
-    opts_info_arr @ id @ []
-    dup not if pop { }dict then
-    optname @ []
-    dup not if pop { }dict then
-;
- 
- 
-: optioninfo_set[ int:id str:optname arr:optinfo -- ]
-    opts_info_arr @ not if { }dict opts_info_arr ! then
-    opts_info_arr @ id @ [] var! optionsinfo
-    optionsinfo @ not if { }dict optionsinfo ! then
-    optinfo @ optionsinfo @ optname @ ->[] optionsinfo !
-    optionsinfo @ opts_info_arr @ id @ ->[] opts_info_arr !
-;
- 
- 
-: optionsinfo_set_indexed[ int:id str:optname str:key str:val -- ]
-    id @ optname @ optioninfo_get var! optinfo
-    val @ optinfo @ key @ ->[] optinfo !
-    id @ optname @ optinfo @ optioninfo_set
-;
- 
- 
-: optionsinfo_del[ int:id -- ]
-    opts_info_arr @ not if { }dict opts_info_arr ! then
-    opts_groupsorder_arr @ not if { }dict opts_groupsorder_arr ! then
-    opts_grouporder_arr @ not if { }dict opts_grouporder_arr ! then
- 
-    opts_info_arr @ id @ array_delitem opts_info_arr !
-    opts_groupsorder_arr @ id @ array_delitem opts_groupsorder_arr !
-    opts_grouporder_arr @ id @ array_delitem opts_grouporder_arr !
-;
- 
- 
-( ------------------------------------------------------------- )
- 
- 
+
+
 : gui_dlog_generic_help[ int:dscr dict:item -- ]
+    dscr @ descrdbref var! who
+
     {SIMPLE_DLOG item @ "name" [] "Help for %s" fmtstring
         {LABEL "optnamel"
             "value"   "Name:"
@@ -686,21 +346,40 @@ lvar opts_info_topnum
         {LABEL "optval"
             "value"   item @ "value" []
                 item @ "type" [] "timespan" stringcmp not if
-                    timespan2str
+                    optmisc_timespan2str
                 then
                 item @ "type" [] "dbref" stringcmp not if
-                    dscr @ swap dbref_unparse
+                    who @ swap optmisc_dbref_unparse
                 then
                 item @ "type" [] "dbreflist" stringcmp not if
                     { }list var! reflistset
                     foreach swap pop
-                        dscr @ swap dbref_unparse
+                        who @ swap optmisc_dbref_unparse
                         reflistset @ array_appenditem reflistset !
                     repeat
                     reflistset @ "\r" array_join
                 then
                 item @ "type" [] "boolean" stringcmp not if
                     if "yes" else "no" then
+                then
+                item @ "type" [] "password" stringcmp not if
+                    pop ""
+                then
+                item @ "type" [] "timespan" stringcmp not if
+                    "" var! spanstr
+                    dup 86400 / dup if
+                        swap 86400 % swap
+                        "%id " fmtstring
+                        spanstr @ swap strcat spanstr !
+                    else pop
+                    then
+                    dup 3600 /
+                    swap 3600 % swap
+                    dup 60 /
+                    swap 60 %
+                    swap rot
+                    "%02i:%02i:%02i" fmtstring
+                    spanstr @ swap strcat strip
                 then
             "newline"  1
             "sticky"   "w"
@@ -735,32 +414,32 @@ lvar opts_info_topnum
     dup GUI_DLOG_SHOW
     swap gui_dlog_register
 ;
-  
-  
+
+
     
 : gui_dlog_generic_cancel_cb[ dict:context str:dlogid str:ctrlid str:event -- int:exit ]
     dlogid @ gui_dlog_deregister
     0
 ;
-  
-  
+
+
 : gui_dlog_generic_help_cb[ dict:context str:dlogid str:ctrlid str:event -- int:exit ]
     context @ "descr" [] var! dscr
     context @ "values" [] var! vals
     context @ "statedata" [] var! statedata
     statedata @ "title" [] var! title
     statedata @ "opts_id" [] var! opts_id
-  
+
     ctrlid @ "name_" "helpbtn_" subst
     vals @ swap [] 0 [] var! ctrlname
-  
+
     dscr @
     opts_id @ ctrlname @ optioninfo_get
     gui_dlog_generic_help
     0
 ;
-  
- 
+
+
 : gui_dlog_generic_save_cb[ dict:context str:dlogid str:ctrlid str:event -- int:exit ]
     context @ "descr" [] var! dscr
     context @ "values" [] var! vals
@@ -768,14 +447,15 @@ lvar opts_info_topnum
     statedata @ "opts_id" [] var! opts_id
     statedata @ "save_cb" [] var! save_fn
     statedata @ "caller_ctx" [] var! caller_ctx
-  
+
     opts_id @ optionsinfo_get  var! optionsinfo
- 
+
     0 var! stackdepth
     0 var! ctrlval
     0 var! minmaxchk
     "" var! errs
-  
+    dscr @ descrdbref var! who
+
     vals @ "ctrl_cnt" [] 0 [] atoi
     0 swap -- 1 for var! cnt
         0 minmaxchk !
@@ -826,9 +506,9 @@ lvar opts_info_topnum
                 end
                 "dbref" stringcmp not when
                     vals @ cnt @ "value_%03i" fmtstring [] 0 []
-                    dscr @ dbref_parse ctrlval !
-                    dscr @ ctrlval @ iteminfo @
-                    objtype_check
+                    who @ optmisc_dbref_parse ctrlval !
+                    who @ ctrlval @ iteminfo @
+                    optmisc_objtype_check
                     dup if errs ! else pop then
                     1 minmaxchk !
                 end
@@ -837,9 +517,9 @@ lvar opts_info_topnum
                     vals @ cnt @ "value_%03i" fmtstring [] 0 []
                     ";" explode_array
                     foreach swap pop
-                        strip dscr @ dbref_parse
-                        dscr @ over iteminfo @
-                        objtype_check
+                        strip who @ optmisc_dbref_parse
+                        who @ over iteminfo @
+                        optmisc_objtype_check
                         dup if errs ! pop break else pop then
                         ctrlval @ array_appenditem ctrlval !
                     repeat
@@ -879,7 +559,7 @@ lvar opts_info_topnum
             oldctrlval @ iteminfo @ "oldvalue" ->[] iteminfo !
             ctrlval    @ iteminfo @ "value"    ->[] iteminfo !
     
-            oldctrlval @ ctrlval @ equalvals? if 0 else 1 then
+            oldctrlval @ ctrlval @ optmisc_equalvals? if 0 else 1 then
             iteminfo @ "changed" ->[] iteminfo !
     
             iteminfo @ optionsinfo @ ctrlname @ ->[] optionsinfo !
@@ -921,7 +601,7 @@ lvar opts_info_topnum
             errs @ if break then
             ctrltype @ "dbref" stringcmp not if
                 dlogid @ cnt @ "value_%03i" fmtstring
-                dscr @ iteminfo @ "value" [] dbref_unparse
+                who @ iteminfo @ "value" [] optmisc_dbref_unparse
                 GUI_VALUE_SET
                 (
                 dlogid @ cnt @ "value_%03i" fmtstring
@@ -932,7 +612,7 @@ lvar opts_info_topnum
         else pop
         then
     repeat
-  
+
     errs @ if
         ( if any verification failed, tell the user and keep dlog up. )
         dlogid @ "errtext" errs @ gui_value_set
@@ -1009,7 +689,7 @@ lvar opts_info_topnum
             then
             errs !
         then
-  
+
         errs @ if
             ( if save failed, tell the user and keep dlog up. )
             dlogid @ "errtext" errs @ gui_value_set
@@ -1031,26 +711,27 @@ lvar opts_info_topnum
             then
         then
     then
- 
+
     dlogid @
     {
         "opts_id" opts_id @
         "caller_ctx" caller_ctx @
         "save_cb" save_fn @
     }dict GUI_DLOG_STATEDATA_SET
-  
+
     0
 ;
-  
-  
+
+
 ( ------------------------------------------------------------- )
- 
- 
+
+
 : singlegroup_ctrls_generate[ int:dscr int:startnum any:context int:opts_id str:group -- arr:ctrlsdesc int:optcount ]
     var maxval
     var minval
     5 var! toppad
-  
+    dscr @ descrdbref var! who
+
     {
         opts_id @ group @ optionsinfo_get_group_opts var! groupopts
         groupopts @
@@ -1215,8 +896,8 @@ lvar opts_info_topnum
                             "sticky" "w"
                         }CTRL
                         {COMBOBOX cnt @ "value_%03i" fmtstring
-                            "value"   dscr @ item @ "value" [] dbref_unparse
-                            "options" dscr @ item @ dbref_option_list
+                            "value"   who @ item @ "value" [] optmisc_dbref_unparse
+                            "options" who @ item @ optmisc_dbref_option_list
                             "editable" 1
                             "sticky" "w"
                             "width"  30
@@ -1235,11 +916,11 @@ lvar opts_info_topnum
                             "value"  item @ "value" []
                                 { }list var! reflistset
                                 foreach swap pop
-                                    dscr @ swap dbref_unparse
+                                    who @ swap optmisc_dbref_unparse
                                     reflistset @ array_appenditem reflistset !
                                 repeat
                                 reflistset @ ";" array_join
-                            "options" dscr @ item @ dbref_option_list
+                            "options" who @ item @ optmisc_dbref_option_list
                             "editable" 1
                             "sticky" "w"
                             "width"  30
@@ -1383,11 +1064,11 @@ lvar opts_info_topnum
     }list
     groupopts @ array_count
 ;
- 
- 
+
+
 ( ------------------------------------------------------------- )
- 
- 
+
+
 : gui_options_generate_singlegroup[ int:dscr any:caller_ctx addr:save_cb str:title str:opts_id str:group -- dict:Handlers str:DlogId ]
     {SIMPLE_DLOG title @
         "|_closed|buttonpress" 'gui_dlog_generic_cancel_cb
@@ -1439,7 +1120,7 @@ lvar opts_info_topnum
     }DLOG
     dscr @ swap GUI_GENERATE var! dlogid var! handlers
     dlogid @ GUI_DLOG_SHOW
-  
+
     dlogid @
     {
         "title" title @
@@ -1447,14 +1128,14 @@ lvar opts_info_topnum
         "caller_ctx" caller_ctx @
         "save_cb" save_cb @
     }dict GUI_DLOG_STATEDATA_SET
-  
+
     handlers @ dlogid @
 ;
-  
-  
+
+
 ( ------------------------------------------------------------- )
- 
- 
+
+
 : multigroup_notebook[ int:dscr any:caller_ctx addr:save_cb str:title str:opts_id -- dict:Handlers str:DlogId ]
     0 var! total_count
     opts_id @ optionsinfo_getgroups var! groups
@@ -1518,7 +1199,7 @@ lvar opts_info_topnum
     dscr @ swap GUI_GENERATE var! dlogid var! handlers
     dlogid @ GUI_DLOG_SHOW
     dlogid @ handlers @ GUI_DLOG_REGISTER
-  
+
     dlogid @
     {
         "title" title @
@@ -1526,14 +1207,14 @@ lvar opts_info_topnum
         "caller_ctx" caller_ctx @
         "save_cb" save_cb @
     }dict GUI_DLOG_STATEDATA_SET
-  
+
     handlers @ dlogid @
 ;
-  
-  
+
+
 ( ------------------------------------------------------------- )
- 
- 
+
+
 : open_group_dlog_cb[ dict:context str:dlogid str:ctrlid str:event -- int:exit ]
     context @ "descr" [] var! dscr
     context @ "values" [] var! vals
@@ -1542,25 +1223,25 @@ lvar opts_info_topnum
     statedata @ "opts_id" [] var! opts_id
     statedata @ "caller_ctx" [] var! caller_ctx
     statedata @ "save_cb" [] var! save_cb
-  
+
     ctrlid @ "group_" "groupbtn_" subst
     vals @ swap [] 0 [] var! group
-  
+
     { "%s: %s" title @ group @ } reverse fmtstring title !
-  
+
     dscr @ caller_ctx @ save_cb @ title @ opts_id @ group @
     gui_options_generate_singlegroup
     swap gui_dlog_register
     0
 ;
-  
-  
+
+
 : gui_options_generate_multigroup[ int:dscr any:caller_ctx addr:save_cb str:title arr:opts_id -- ]
     0 var! colnum
     4 var! maxcols
-  
+
     opts_id @ optionsinfo_getgroups var! groups
-  
+
     {SIMPLE_DLOG title @
         {LABEL "errtext"
             "value"   "Select the option group you wish to edit."
@@ -1616,7 +1297,7 @@ lvar opts_info_topnum
     dscr @ swap GUI_GENERATE var! dlogid var! handlers
     dlogid @ GUI_DLOG_SHOW
     dlogid @ handlers @ GUI_DLOG_REGISTER
-  
+
     dlogid @
     {
         "title" title @
@@ -1625,8 +1306,8 @@ lvar opts_info_topnum
         "save_cb" save_cb @
     }dict GUI_DLOG_STATEDATA_SET
 ;
-  
-  
+
+
 : gui_options_generate[ int:dscr any:caller_ctx addr:save_cb str:title arr:optionsinfo -- int:opts_id ]
     { }dict var! groups
     optionsinfo @ optionsinfo_new var! opts_id
@@ -1648,41 +1329,50 @@ lvar opts_info_topnum
     opts_id @
 ;
 PUBLIC gui_options_generate
-  
-  
+
+
 : gui_options_value_set[ int:opts_id str:optname any:value -- ]
     opts_id @ optname @ "value" value @ optionsinfo_set_indexed
     ( FIXME: Must implement updating of dialogs. )
 ;
 PUBLIC gui_options_value_set
- 
- 
+
+
 : gui_options_free[ int:opts_id -- ]
     opts_id @ optionsinfo_del
 ;
 PUBLIC gui_options_free
- 
- 
+
+
 : gui_options_process[ int:dscr any:caller_ctx addr:save_cb str:title arr:optionsinfo -- ]
-    dscr @ caller_ctx @ save_cb @ title @ optionsinfo @
-    gui_options_generate var! opts_id
-    background
-    gui_event_process
-    opts_id @ gui_options_free
+    dscr @ GUI_AVAILABLE 0.0 > if
+        dscr @ caller_ctx @ save_cb @ title @ optionsinfo @
+        gui_options_generate var! opts_id
+        background
+        gui_event_process
+        opts_id @ gui_options_free
+    else
+        dscr @ descrdbref me @ dbcmp if
+            caller_ctx @ save_cb @ title @ optionsinfo @
+            menu_options_process
+        else
+            "Textmode option menu fallback will only work for the triggering player."
+            abort
+        then
+    then
 ;
 PUBLIC gui_options_process
- 
- 
+
+
 $pubdef GUI_OPTIONS_GENERATE  "$lib/optionsgui" match "gui_options_generate" call
 $pubdef GUI_OPTIONS_VALUE_SET  "$lib/optionsgui" match "gui_options_value_set" call
 $pubdef GUI_OPTIONS_FREE  "$lib/optionsgui" match "gui_options_free" call
 $pubdef GUI_OPTIONS_PROCESS  "$lib/optionsgui" match "gui_options_process" call
- 
+
 .
 c
 q
 @register lib-optionsgui=lib/optionsgui
-@register #me lib-optionsgui=tmp/prog1
 @register #me lib-optionsgui=tmp/prog1
 @set $tmp/prog1=W
 @set $tmp/prog1=L
