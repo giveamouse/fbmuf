@@ -171,6 +171,10 @@
             then
         then
     repeat
+    key @ if
+        "Bad dialog description format: option is missing its value"
+        abort
+    then
     args @ ctrls @
 ;
   
@@ -538,19 +542,22 @@ PUBLIC gui_generate
             dscr @ dlogid @ id @ guievent @
             id @ "|" strcat guievent @ strcat dests @ dispatch
   
-            pop (if we don't have a callback for it, we ignore it.)
-            dup int? if
-                if
-                    (The callback wants us to exit.)
-                    guis @ others @ args @ event @
-                    break
-                then
+            not if
+                pop pop pop pop
             else
-                dup array? if
-                    others @ gui_dict_add others !
-                    guis @ gui_dict_add guis !
+                dup int? if
+                    if
+                        (The callback wants us to exit.)
+                        guis @ others @ args @ event @
+                        break
+                    then
                 else
-                    pop "Invalid return type from callback function." abort
+                    dup array? if
+                        others @ gui_dict_add others !
+                        guis @ gui_dict_add guis !
+                    else
+                        pop "Invalid return type from callback function." abort
+                    then
                 then
             then
             dismiss @ if
@@ -564,19 +571,22 @@ PUBLIC gui_generate
             then
         else
             args @ event @ dup others @ dispatch
-            pop (if we don't have a callback for it, we ignore it.)
-            dup int? if
-                if
-                    (The callback wants us to exit.)
-                    guis @ others @ args @ event @
-                    break
-                then
+            not if
+                pop pop pop pop
             else
-                dup array? if
-                    others @ gui_dict_add others !
-                    guis @ gui_dict_add guis !
+                dup int? if
+                    if
+                        (The callback wants us to exit.)
+                        guis @ others @ args @ event @
+                        break
+                    then
                 else
-                    pop "Invalid return type from callback function." abort
+                    dup array? if
+                        others @ gui_dict_add others !
+                        guis @ gui_dict_add guis !
+                    else
+                        pop "Invalid return type from callback function." abort
+                    then
                 then
             then
         then
