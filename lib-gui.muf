@@ -2,7 +2,7 @@
 1 99999 d
 1 i
 (
- GUI_GENERATE [intDescr listDlogSpec -- dictHandlers strDlogId]
+ GUI_GENERATE[ int:Dscr list:DlogSpec -- dict:Handlers str:DlogID ]
      Given a nested list that describes a dialog, sends all MCP commands
      neccesary to build that dialog, and returns a dictionary of callbacks
      to be called by that dialog's events, and the dialogID of the new
@@ -92,7 +92,7 @@
   
   
   
- GUI_EVENT_PROCESS [dictGuiHandlers dictOtherHandlers -- dictGuiHandlers' dictOtherHandlers' dictArgs strEvent]
+ GUI_EVENT_PROCESS[ dict:GuiHandlers dict:OtherHandlers -- dict:GuiHandlers' dict:OtherHandlers' dictArgs strEvent ]
      This waits for and processes events as they come in.  If there are
      callbacks available for each event, they will be called.
   
@@ -112,31 +112,36 @@
          }dict
      This will let it deal with more than one dialog at a time if needed.
      Gui callbacks have the signature:
-        [intDescr strDlogId strCtrlId strGuiEvent -- intExit]
+        [ int:Dscr str:DlogID str:CtrlID str:GuiEventType -- int:ExitRequested ]
      If the callback returns true, then GUI_EVENT_PROCESS will return.
   
      The second dictionary passed to GUI_EVENT_PROCESS is keyed with the
      names of any other event types that MUF may support.  The values are
      the addresses of the callback functions for each event.  ie:
          {
-             "timer.1"  'timer1-callback
-             "user.foo" 'foo-callback
+             "TIMER.1"  'timer1-callback
+             "USER.foo" 'foo-callback
          }dict
      This is here for future expansion of the event system.
      Miscellaneous event callbacks have the signature:
-        [dictArgs strEvent -- intExit]
-     If the callback returns true, then GUI_EVENT_PROCESS will return.
+        [ dict:Args str:EventType -- int:ExitRequested ]
+     or
+        [ dict:Args str:EventType -- dict:GuiHandlers dict:OtherHandlers ]
+ 
+     In the first form, if the callback returns true, then GUI_EVENT_PROCESS
+     will return.
   
-     If a callback returns two dictionaries instead of an integer, then it is
-     assumed to have a new GUI dialog to watch, or a new event to watch for.
-     The first dictionary is for dialogs, and is in the same format as the
-     dictGuiHandlers argument to GUI_EVENT_PROCESS.  The second dictionary is
-     for miscellaneous events, and is in the format of the dictOtherHandlers
-     argument to GUI_EVENT_PROCESS.  IF a value for one of the keys in either
-     dictionary is a false value, [ie: 0, null string, etc] then that event or
-     dialog is explicitly forgotten about.  You must do this when you use the
-     GUI_DLOG_CLOSE primitive in a callback, to let GUI_EVENT_PROCESS know that
-     it no longer needs to worry about that dialog.
+     In the second form, the callback is requesting a change to the set of
+     handlers that GUI_EVENT_PROCESS should deal with.  The GuiHandlers
+     dictionary is for dialogs, and is in the same format as the GuiHandlers
+     dictionary argument passed to GUI_EVENT_PROCESS.  The OtherHandlers
+     dictionary is for miscellaneous events, and is in the format of the
+     OtherHandlers dictionary argument passed to GUI_EVENT_PROCESS.  If the
+     value associated with one of the keys in either dictionary is a false
+     value, [ie: 0, null string, etc] then that event or dialog is explicitly
+     forgotten about.  You must do this when you use the GUI_DLOG_CLOSE
+     primitive in a callback, to let GUI_EVENT_PROCESS know that it no longer
+     needs to worry about that dialog.
      
      GUI_EVENT_PROCESS will return when all dialogs have been dismissed, or
      when one of the callbacks returns true, or when an event is received for
@@ -148,11 +153,12 @@
          4. The event string returned by EVENT_WAIT.
 )
   
-: list_parse (list -- dictArgs listControls)
-    var key "" key !
-    var args { }dict args !
-    var ctrls { }dict ctrls !
+: list_parse[ list:spec -- dict:args list:ctrls ]
+    ""      var! key
+    { }dict var! args
+    { }dict var! ctrls
   
+    spec @
     foreach
         swap pop
         key @ if
@@ -179,11 +185,12 @@
 ;
   
   
-: gui_generate_ctrl (strDlogID strPane listControl -- dictHandlers)
-    var pane swap pane !
-    var dlogid swap dlogid !
-    var type dup 0 [] type !
-    var id   dup 1 [] id !
+: gui_generate_ctrl[ str:dlogid str:pane list:ctrlspec -- dictHandlers ]
+    ctrlspec @ 0 []
+    var! type
+
+    ctrlspec @ 1 []
+    var! id
   
     type @ string? not if
         "Bad control type: Expected a string"
@@ -195,20 +202,19 @@
         abort
     then
     
-    var panes { }list panes !
-    var names { }list names !
+    { }list var! panes
+    { }list var! names
   
-    var args     { "value" "" }dict args !
-    var ctrls    {            }dict ctrls !
-    var handlers {            }dict handlers !
+    { "value" "" }dict var! args
+    {            }dict var! ctrls
+    {            }dict var! handlers
  
-    var multipane
-    type @ C_NOTEBOOK stringcmp not multipane !
+    type @ C_NOTEBOOK stringcmp not
+    var! multipane
   
-    dup array_count 2 > if
-        2 9999 [..] list_parse ctrls ! args !
-    else
-        pop
+    ctrlspec @ array_count 2 > if
+        ctrlspec @ 2 9999 [..] list_parse
+        ctrls ! args !
     then
   
     ctrls @ array_count if
@@ -229,7 +235,7 @@
             swap 1 strcut swap pop
             id @ "|" strcat swap strcat
             over address? not if
-                "Handlers can only take address artguments."
+                "Handlers can only take address arguments."
                 abort
             then
             handlers @ swap array_setitem handlers !
@@ -293,15 +299,13 @@
 ;
   
   
-: gui_generate_simple (intDescr strDlogType strTitle listDialog -- dictHandlers strDlogID)
-    var title swap title !
-    var dtype swap dtype !
-    var descr swap descr !
+: gui_generate_simple[ int:dscr str:dlogtype str:title list:dlogspec --
+                       dict:handlers str:dlogid ]
   
-    var handlers { }dict handlers !
+    { }dict var! handlers
  
-    list_parse swap
-    var args dup args !
+    dlogspec @ list_parse swap
+    dup var! args
     foreach
         over "|" 1 strncmp not if
             args @ 3 pick array_delitem args !
@@ -316,7 +320,7 @@
         then
     repeat
     
-    descr @ dtype @ title @ args @ GUI_DLOG_CREATE
+    dscr @ dlogtype @ title @ args @ GUI_DLOG_CREATE
     var dlogid dlogid !
   
     foreach
@@ -329,17 +333,15 @@
 ;
   
   
-: gui_generate_paned (intDescr strDlogType strTitle listDialog -- dictHandlers strDlogID)
-    var title swap title !
-    var dtype swap dtype !
-    var descr swap descr !
-    var panes { }list panes !
-    var names { }list names !
+: gui_generate_paned[ int:dscr str:dlogtype str:title list:dlogspec --
+                      dict:handlers str:dlogid ]
+    { }list var! panes
+    { }list var! names
   
-    list_parse
-    var ctrls ctrls !
-    var args args !
-    var handlers { }dict handlers !
+    dlogspec @ list_parse
+    var! ctrls
+    var! args
+    { }dict var! handlers
   
     args @
     foreach
@@ -363,16 +365,16 @@
             abort
         else
             dup 1 [] (pane)
-			panes @ array_appenditem panes !
+            panes @ array_appenditem panes !
             swap 2 [] (name)
-			names @ array_appenditem names !
+            names @ array_appenditem names !
         then
     repeat
   
-	panes @ args @ "panes" array_setitem args !
-	names @ args @ "names" array_setitem args !
+    panes @ args @ "panes" array_setitem args !
+    names @ args @ "names" array_setitem args !
   
-    descr @ dtype @ title @ args @ GUI_DLOG_CREATE
+    dscr @ dlogtype @ title @ args @ GUI_DLOG_CREATE
     var dlogid dlogid !
   
     ctrls @ foreach
@@ -394,21 +396,19 @@
 ;
   
   
-: gui_generate (intDescr listDlogSpec -- dictHandlers strDlogId)
-    var descr swap descr !
-    var type dup 0 [] type !
-    var title dup 1 [] title !
+: gui_generate[ int:Dscr list:DlogSpec -- dict:Handlers str:DlogID ]
+    DlogSpec @ 0 [] var! type
+    DlogSpec @ 1 [] var! title
   
+    Dscr @ type @ title @
+    DlogSpec @ 2 9999 [..]
+
     type @ D_TABBED stringcmp not
     type @ D_HELPER stringcmp not or if
-	    descr @ type @ title @
-		4 rotate 2 9999 [..]
-		gui_generate_paned
-	else
-        descr @ type @ title @
-        4 rotate 2 9999 [..]
+        gui_generate_paned
+    else
         gui_generate_simple
-	then
+    then
 ;
 PUBLIC gui_generate
  
@@ -443,20 +443,19 @@ PUBLIC gui_generate
     repeat
 ;
   
-: gui_event_process (dictGuiHandlers dictOtherHandlers -- dictGuiHandlers dictArgs strEvent)
-    var others others !
-    var guis guis !
+: gui_event_process[ dict:GuiHandlers dict:OtherHandlers --
+                     dict:GuiHandlers dict:Args str:Event ]
     begin
         EVENT_WAIT
         var event event !
         var args args !
         event @ "GUI." 4 strncmp not if
             event @ 4 strcut swap pop
-            guis @ swap []
+            GuiHandlers @ swap []
             var dests dests !
             dests @ not if
                 (If no callbacks for this dialog, return.)
-                guis @ others @ args @ event @
+                GuiHandlers @ OtherHandlers @ args @ event @
                 break
             then
             
@@ -475,13 +474,13 @@ PUBLIC gui_generate
                 dup int? if
                     if
                         (The callback wants us to exit.)
-                        guis @ others @ args @ event @
+                        GuiHandlers @ OtherHandlers @ args @ event @
                         break
                     then
                 else
                     dup array? if
-                        others @ gui_dict_add others !
-                        guis @ gui_dict_add guis !
+                        OtherHandlers @ gui_dict_add OtherHandlers !
+                        GuiHandlers @ gui_dict_add GuiHandlers !
                     else
                         pop "Invalid return type from callback function." abort
                     then
@@ -489,28 +488,28 @@ PUBLIC gui_generate
             then
             dismiss @ if
                 (The dialog was dismissed.  Forget that dialog.)
-                guis @ dlogid @ array_delitem guis !
+                GuiHandlers @ dlogid @ array_delitem GuiHandlers !
             then
-            guis @ array_count not if
+            GuiHandlers @ array_count not if
                 (No more dialogs left.  Time to exit)
-                guis @ others @ args @ event @
+                GuiHandlers @ OtherHandlers @ args @ event @
                 break
             then
         else
-            args @ event @ dup others @ dispatch
+            args @ event @ dup OtherHandlers @ dispatch
             not if
                 pop pop pop pop
             else
                 dup int? if
                     if
                         (The callback wants us to exit.)
-                        guis @ others @ args @ event @
+                        GuiHandlers @ OtherHandlers @ args @ event @
                         break
                     then
                 else
                     dup array? if
-                        others @ gui_dict_add others !
-                        guis @ gui_dict_add guis !
+                        OtherHandlers @ gui_dict_add OtherHandlers !
+                        GuiHandlers @ gui_dict_add GuiHandlers !
                     else
                         pop "Invalid return type from callback function." abort
                     then
@@ -521,8 +520,7 @@ PUBLIC gui_generate
 ;
 PUBLIC gui_event_process
  
-: gui_process_single_dlog (strDlogID -- dictContext strCtrlId )
-    var dlogid dlogid !
+: gui_process_single_dlog[ str:dlogid -- dict:context str:ctrlid ]
     begin
         event_wait
         "GUI." dlogid @ strcat strcmp not if
