@@ -1,4 +1,4 @@
-@program test-array_sort
+@program test-array_sort_base
 1 9999 d
 1 i
 : test-array_sort[ str:arg -- ]

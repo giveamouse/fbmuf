@@ -1,3 +1,6 @@
+@prog test-array_cut
+1 99999 d
+1 i
 : arrcmp[ arr:a arr:b str:testname -- ]
     a @ b @ array_compare if
         testname @ " check failed." strcat abort
@@ -31,4 +34,9 @@
     {                        }list "Index 4, second result" arrcmp
     { "Alpha" "Beta" "Gamma" }list "Index 4, first result" arrcmp
 ;
+.
+c
+q
+@register #me test-array_cut=tmp/prog1
+@set $tmp/prog1=3
 

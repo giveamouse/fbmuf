@@ -1,3 +1,6 @@
+@prog test-incrdecr
+1 99999 d
+1 i
 var globalv
 lvar localv
   
@@ -40,5 +43,9 @@ lvar localv
     globalv "Global var" vartest
     localv  "Local var"  vartest
 ;
+.
+c
+q
+@register #me test-incrdecr=tmp/prog1
+@set $tmp/prog1=3
  
-
