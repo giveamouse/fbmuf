@@ -45,21 +45,28 @@
   
   
 : popoffn ({rng} -- )
-	popn
+    popn
 ;
   
   
 : copyrange ( {rng} ... offset num pos -- {rng} ... {subrng} )
-	var pos 1 - pos !
-	var num num !
-    array_make var stuff stuff !
-	array_make var range range !
-	var subrng
-
-	num @ 0 <= if
+    1 - var! pos
+    var! num
+    array_make var! stuff
+    array_make var! range
+    var subrng
+ 
+    (avoid rangecheck errors to duplicate pre FB6 behaviour.) 
+    num @ 0 <= range @ array_count pos @ < or if
         { }list subrng !
-	else
-		range @ pos @ dup num @ + 1 -
+    else
+        (limit operations to the actual size of the range [pre FB6 compat])
+        pos @ num @ + range @ array_count - dup 0 > if
+            num @ swap - num !
+        else 
+            pop
+        then        
+        range @ pos @ dup num @ + 1 -
         array_getrange subrng !
     then
     range @ array_vals
@@ -69,16 +76,23 @@
   
   
 : extractrange ( {rng} ... offset num pos -- {rng'} ... {subrng} )
-	var pos 1 - pos !
-	var num num !
-    array_make var stuff stuff !
-	array_make var range range !
-	var subrng
-
-	num @ 0 <= if
+    1 - var! pos
+    var! num
+    array_make var! stuff
+    array_make var! range
+    var subrng
+ 
+    (avoid rangecheck errors to duplicate pre FB6 behaviour.) 
+    num @ 0 <= range @ array_count pos @ < or if
         { }list subrng !
-	else
-		range @ pos @ dup num @ + 1 -
+    else
+        (limit operations to the actual size of the range [pre FB6 compat])
+        pos @ num @ + range @ array_count - dup 0 > if
+            num @ swap - num !
+        else 
+            pop
+        then
+        range @ pos @ dup num @ + 1 -
         array_getrange subrng !
         range @ pos @ dup num @ + 1 -
         array_delrange range !
@@ -90,46 +104,52 @@
   
   
 : swapranges ( {rng1} {rng2} -- {rng2} {rng1} )
-	array_make var tmp tmp !
-	array_make var tmp2 tmp2 !
-	tmp @ array_vals
-	tmp2 @ array_vals
+    array_make var! tmp
+    array_make var! tmp2
+    tmp @ array_vals
+    tmp2 @ array_vals
 ;
   
 : deleterange  ( {rng} ... offset num pos -- {rng'} )
     extractrange popn
 ;
   
-: insertrange  ( {rng1} ... {rng2} offset pos-- {rng} ... )
-	var pos 1 - pos !
-    var offset offset !
-    array_make var newrng newrng !
-    offset @ array_make var stuff stuff !
-	array_make
-
-    pos @ newrng @ array_insertrange
+: insertrange  ( {rng1} ... {rng2} offset pos -- {rng} ... )
+    1 - var! pos
+    var! offset
+    array_make var! newrng
+    offset @ array_make var! stuff
+    array_make var! range
+ 
+    (limit operations to the actual size of the range [pre FB6 compat])
+    pos @ range @ array_count - dup 0 > if
+        pos @ swap - pos !
+    else 
+        pop
+    then
+    range @ pos @ newrng @ array_insertrange
     array_vals
     stuff @ array_vals pop
 ;
   
   
 : filterrange ( {rng} funcaddr -- {rng'} {filtrdrng} )
-   var cb cb !
-   var outrng { }list outrng !
-   array_make var range range !
-   range @ foreach
-      dup cb @ execute if
-         outrng @ dup array_count array_setitem outrng !
-         range @ swap array_delitem range !
-      else
-         pop
-      then
-   repeat
-   range @ array_vals
-   outrng @ array_vals
+    var! cb
+    { }list var! outrng
+    array_make var! range
+    range @ foreach
+        dup cb @ execute if
+            outrng @ dup array_count array_setitem outrng !
+            range @ swap array_delitem range !
+        else
+            pop
+        then
+    repeat
+    range @ array_vals
+    outrng @ array_vals
 ;
   
-  
+ 
 public catranges
 public popoffn
 public extractrange
@@ -145,12 +165,14 @@ q
 @register #me lib-stackrng=tmp/prog1
 @set $tmp/prog1=L
 @set $tmp/prog1=V
-@set $tmp/prog1=/_defs/popn:"$lib/stackrng" match "popoffn" call
-@set $tmp/prog1=/_defs/sr-catrng:"$lib/stackrng" match "catranges" call
-@set $tmp/prog1=/_defs/sr-copyrng:"$lib/stackrng" match "copyrange" call
-@set $tmp/prog1=/_defs/sr-deleterng:"$lib/stackrng" match "deleterange" call
-@set $tmp/prog1=/_defs/sr-extractrng:"$lib/stackrng" match "extractrange" call
-@set $tmp/prog1=/_defs/sr-filterrng:"$lib/stackrng" match "filterrange" call
-@set $tmp/prog1=/_defs/sr-insertrng:"$lib/stackrng" match "insertrange" call
-@set $tmp/prog1=/_defs/sr-poprng:"$lib/stackrng" match "popoffn" call
-@set $tmp/prog1=/_defs/sr-swaprng:"$lib/stackrng" match "swapranges" call
+@set $tmp/prog1=3
+@propset $tmp/prog1=str:/_defs/popn:
+@propset $tmp/prog1=str:/_defs/sr-catrng:"$lib/stackrng" match "catranges" call
+@propset $tmp/prog1=str:/_defs/sr-copyrng:"$lib/stackrng" match "copyrange" call
+@propset $tmp/prog1=str:/_defs/sr-deleterng:"$lib/stackrng" match "deleterange" call
+@propset $tmp/prog1=str:/_defs/sr-extractrng:"$lib/stackrng" match "extractrange" call
+@propset $tmp/prog1=str:/_defs/sr-filterrng:"$lib/stackrng" match "filterrange" call
+@propset $tmp/prog1=str:/_defs/sr-insertrng:"$lib/stackrng" match "insertrange" call
+@propset $tmp/prog1=str:/_defs/sr-poprng:"$lib/stackrng" match "popoffn" call
+@propset $tmp/prog1=str:/_defs/sr-swaprng:"$lib/stackrng" match "swapranges" call
+
