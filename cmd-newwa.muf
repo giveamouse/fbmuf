@@ -28,8 +28,7 @@ $def OLD_FORMAT    "%-34.34[locname]~ %3[cnt]~%1[adult]~"
 $def LASTPUBLIC "yes" (use lastpublic timestamp for idleness determination )
 $def LASTPUBLIC_PROP "~lastpublic"
  
-$def CHECKAGE "yes"
-$ifdef CHECKAGE
+$iflib $adultlock
   $include $adultlock
   $def AGE_PROP1    "_Banish/force-age?"
   $def AGE_PROP2    "_Banish/@force-age?"
@@ -150,7 +149,7 @@ $endif
             then
             1 nonpublic !
         then
-$ifdef CHECKAGE
+$iflib $adultlock
         wholoc @ checkage? not if continue then
 $endif
         walist @ wholoc @ int []
@@ -160,7 +159,7 @@ $endif
                 "locname" wholoc @ name nonpublic @ if "[%.23s]" fmtstring then
                 "note"  wholoc @ WA_PROP getpropstr strip
                 "dir"   wholoc @ DIR_PROP getpropstr strip
-$ifdef CHECKAGE
+$iflib $adultlock
                 "adult" wholoc @ Adultmaybe? if "*" else " " then
 $else
                 "adult" " "
@@ -199,7 +198,7 @@ $endif
         "wfl"     "WF"
         "act"     "Act"
         "adult"   ""
-$ifdef CHECKAGE
+$iflib $adultlock
         "loc"     "Room Name [*=Adult area]"
 $else
         "loc"     "Room Name"
@@ -320,7 +319,7 @@ $endif
     "WhereAre will now never show your name in a WhereAre #name or #wf list." .tell
 ;
  
-$ifdef CHECKAGE
+$iflib $adultlock
 : set_adult[ bool:adult -- ]
     adult @ if
         me @ WAADULT_PROP "yes" setprop
@@ -335,7 +334,7 @@ $endif
 : show_usage_long[ -- ]
     {
         " "
-        "WhereAre v6.00   Copyright 1/21/02 by foxen@belfry.com"
+        "WhereAre v6.03   Copyright 2003 by foxen@belfry.com"
         "--------------------------------------------------------------------------"
         "Only one of the following optional fields can be shown at a time:"
         "  #comments      Show the descriptive comment for each room. [default]"
@@ -367,7 +366,7 @@ $endif
         "The following commands can only appear as the first option:"
         "  #default OPTS  Sets your default options to OPTS.  Uses entire line."
         "  #reset         Resets your default options back to system default."
-$ifdef CHECKAGE
+$iflib $adultlock
         compare-my-age if
             "  #adult         Specifies you wish to see adult rooms in the future."
             "  #prude         Specifies you do NOT wish to see adult rooms. [default]"
@@ -412,7 +411,7 @@ $endif
                 dup "#help"     swap stringpfx if pop continue then
                 dup "#default"  swap 3 stringminpfx if pop continue then
                 dup "#reset"    swap stringpfx if pop continue then
-$ifdef CHECKAGE
+$iflib $adultlock
                 dup "#adult"    swap stringpfx if pop continue then
                 dup "#prude"    swap stringpfx if pop continue then
 $endif
@@ -425,7 +424,7 @@ $endif
                 dup "#help"     swap stringpfx if pop show_usage_long 1 exit then
                 dup "#default"  swap 3 stringminpfx if pop args @ set_default 1 exit then
                 dup "#reset"    swap stringpfx if pop "" set_default 1 exit then
-$ifdef CHECKAGE
+$iflib $adultlock
                 compare-my-age if
                     dup "#adult"    swap stringpfx if pop 1 set_adult 1 exit then
                     dup "#prude"    swap stringpfx if pop 0 set_adult 1 exit then
