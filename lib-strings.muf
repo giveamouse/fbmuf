@@ -34,8 +34,8 @@ This routine is useful for parsing command line input:
   
 : sms ( str -- str')
   begin
-	dup "  " instr while
-	" " "  " subst
+    dup "  " instr while
+    " " "  " subst
   repeat
 ;
   
@@ -43,49 +43,30 @@ This routine is useful for parsing command line input:
 : fillfield (str padchar fieldwidth -- padstr)
   rot strlen -
   dup 1 < if
-	pop pop "" exit
+    pop pop "" exit
   then
   swap
   dup strcat dup strcat
   dup strcat dup strcat
   dup strcat
   begin
-	over over strlen < while
-	dup strcat dup strcat
+    over over strlen < while
+    dup strcat dup strcat
   repeat
   swap strcut pop
 ;
   
-: left (str fieldwidth -- str')
-  "%-" swap intostr strcat "s" strcat fmtstring
-;
-  
-: right (str fieldwidth -- str')
-  "%" swap intostr strcat "s" strcat fmtstring
-  ( Old Code: over " " rot fillfield swap strcat )
-;
-  
-: center (str fieldwidth -- str')
-  "%|" swap intostr strcat "s" strcat fmtstring
-  ( Old Code:
-	over " " rot fillfield
-	dup strlen 2 / strcut
-	rot swap strcat strcat
-  )
-;
-  
-  
 : STRparse ( s -- s1 s2 s3 )
   (
-	Before: " #option  tom dick  harry = message "
-	After:  "option" "tom dick harry" " message "
+    Before: " #option  tom dick  harry = message "
+    After:  "option" "tom dick harry" " message "
   )
   "=" rsplit swap
   striplead dup "#" 1 strncmp not if
-	1 strcut swap pop
-	" " split
+    1 strcut swap pop
+    " " split
   else
-	"" swap
+    "" swap
   then
   strip sms rot
 ;
@@ -93,9 +74,6 @@ This routine is useful for parsing command line input:
   
 public sms
 public fillfield
-public left
-public right
-public center
 public STRparse
 .
 c
@@ -106,12 +84,12 @@ q
 @set $tmp/prog1=/_/de:A scroll containing a spell called stringslib
 @set $tmp/prog1=/_defs/.asc:ctoi
 @set $tmp/prog1=/_defs/.blank?:striplead not
-@set $tmp/prog1=/_defs/.center:"$lib/strings" match "center" call
+@set $tmp/prog1=/_defs/.center:"%|*s" fmtstring
 @set $tmp/prog1=/_defs/.chr:itoc dup not if pop "." then
 @set $tmp/prog1=/_defs/.command_parse:"$lib/strings" match "STRparse" call
 @set $tmp/prog1=/_defs/.fillfield:"$lib/strings" match "fillfield" call
-@set $tmp/prog1=/_defs/.left:"$lib/strings" match "left" call
-@set $tmp/prog1=/_defs/.right:"$lib/strings" match "right" call
+@set $tmp/prog1=/_defs/.left:"%-*s" fmtstring
+@set $tmp/prog1=/_defs/.right:"%*s" fmtstring
 @set $tmp/prog1=/_defs/.rsplit:rsplit
 @set $tmp/prog1=/_defs/.singlespace:"$lib/strings" match "sms" call
 @set $tmp/prog1=/_defs/.sls:striplead
@@ -122,12 +100,12 @@ q
 @set $tmp/prog1=/_defs/.sts:striptail
 @set $tmp/prog1=/_defs/STRasc:ctoi
 @set $tmp/prog1=/_defs/STRblank?:striplead not
-@set $tmp/prog1=/_defs/STRcenter:"$lib/strings" match "center" call
+@set $tmp/prog1=/_defs/STRcenter:"%|*s" fmtstring
 @set $tmp/prog1=/_defs/STRchr:itoc dup not if pop "." then
 @set $tmp/prog1=/_defs/STRfillfield:"$lib/strings" match "fillfield" call
-@set $tmp/prog1=/_defs/STRleft:"$lib/strings" match "left" call
+@set $tmp/prog1=/_defs/STRleft:"%-*s" fmtstring
 @set $tmp/prog1=/_defs/STRparse:"$lib/strings" match "STRparse" call
-@set $tmp/prog1=/_defs/STRright:"$lib/strings" match "right" call
+@set $tmp/prog1=/_defs/STRright:"%*s" fmtstring
 @set $tmp/prog1=/_defs/STRrsplit:rsplit
 @set $tmp/prog1=/_defs/STRsinglespace:"$lib/strings" match "sms" call
 @set $tmp/prog1=/_defs/STRsls:striplead

@@ -22,7 +22,7 @@
   REF-next  [objref reflistname currdbref -- nextdbref]
     Returns the next dbref in the list after the one you give it.
     Returns #-1 at the end of the list.
-
+  
   REF-inlist? [objref reflistname dbreftocheck -- inlist?]
     Returns whether or not the given dbref is in the dbreflist.
   
@@ -33,20 +33,20 @@
   REF-allrefs [objref reflistname -- refx...ref1 refcount]
     Returns a range on the stack containing all the refs in the list,
     with the count of them on top.
-
+  
   REF-array [objref reflistname -- listarray ]
-	Returns a list array, containing all the dbrefs in the list.
-
+    Returns a list array, containing all the dbrefs in the list.
+  
   REF-array-set [objref reflistname listarray -- ]
-	Sets the given reflist to the given list array of dbrefs.
-
+    Sets the given reflist to the given list array of dbrefs.
+  
   REF-filter [address objref reflistname -- refx...ref1 refcount]
     Returns a range of dbrefs on the stack, filtered from the given reflist.
     The filtering is done by a function that you pass the address of.  The
     filter routine is [d -- i].  It takes a dbref and returns a boolean int.
     If the integer is 0, the ref is not included in the returned list.  If
     the integer is not 0, the it is in the returned list.
-
+  
   REF-editlist  [players? objref reflistname -- ]  
     Enters the user into an interactive editor that lets them add and remove
     objects from the given reflist.  'players?' is an integer boolean value,
@@ -59,46 +59,19 @@ $include $lib/props
 $include $lib/look
 $include $lib/match
   
-: REF-delete (obj reflist killref -- )
-  var ref ref !
-  over over array_get_reflist
-  ref @ array_excludeval
-  array_put_reflist
-;
-  
-: REF-add (obj reflist addref -- )
-  var ref ref !
-  over over array_get_reflist
-  ref @ array_excludeval
-  ref @ swap array_appenditem
-  array_put_reflist
-;
-  
-: REF-first (obj reflist -- firstref)
-  array_get_reflist 0 []
-;
-  
 : REF-next (obj reflist currref -- nextref)
   rot rot array_get_reflist
   dup rot array_findval
   0 [] array_next
   not if pop #-1 then
 ;
-
-: REF-inlist? (objref reflistname dbreftocheck -- inlist?)
-  rot rot array_get_reflist
-  swap array_findval array_count
-;
   
-: REF-allrefs (d s -- dx...d1 i)
+: REF-list  (objref reflistname -- liststr)
   array_get_reflist
   array_vals
+  .short-list
 ;
-
-: REF-list  (objref reflistname -- liststr)
-  REF-allrefs .short-list
-;
-
+  
 : REF-filter (a d s -- dx...d1 i)
   array_get_reflist
   0 array_make swap
@@ -111,8 +84,8 @@ $include $lib/match
   repeat
   swap pop array_vals
 ;
-
-
+  
+  
 : REF-editlist-help
   if
     "To add a player, enter their name.  To remove a player, enter their name"
@@ -130,7 +103,7 @@ $include $lib/match
     strcat strcat strcat strcat .tell
   then
 ;
-
+  
 : REF-editlist  (players? objref reflistname -- )
   3 pick REF-editlist-help
   "The object list currently contains:" .tell
@@ -172,15 +145,10 @@ $include $lib/match
     then
   repeat
 ;
-
-
-PUBLIC REF-add
-PUBLIC REF-delete
-PUBLIC REF-first
+  
+  
 PUBLIC REF-next
 PUBLIC REF-list
-PUBLIC REF-inlist?
-PUBLIC REF-allrefs
 PUBLIC REF-filter (address objref reflistname -- refx...ref1 refcount)
 PUBLIC REF-editlist  (players? objref reflistname -- )
 .
@@ -193,14 +161,13 @@ q
 @set $tmp/prog1=S
 @set $tmp/prog1=B
 @set $tmp/prog1=2
-@set $tmp/prog1=/_/de:A scroll containing a spell called lib-reflist
-@set $tmp/prog1=/_defs/REF-add:"$lib/reflist" match "REF-add" call
-@set $tmp/prog1=/_defs/REF-delete:"$lib/reflist" match "REF-delete" call
-@set $tmp/prog1=/_defs/REF-first:"$lib/reflist" match "REF-first" call
+@set $tmp/prog1=/_defs/REF-add:reflist_add
+@set $tmp/prog1=/_defs/REF-delete:reflist_del
+@set $tmp/prog1=/_defs/REF-first:array_get_reflist 0 []
 @set $tmp/prog1=/_defs/REF-next:"$lib/reflist" match "REF-next" call
-@set $tmp/prog1=/_defs/REF-inlist?:"$lib/reflist" match "REF-inlist?" call
+@set $tmp/prog1=/_defs/REF-inlist?:reflist_find
 @set $tmp/prog1=/_defs/REF-list:"$lib/reflist" match "REF-list" call
-@set $tmp/prog1=/_defs/REF-allrefs:"$lib/reflist" match "REF-allrefs" call
+@set $tmp/prog1=/_defs/REF-allrefs:array_get_reflist array_vals
 @set $tmp/prog1=/_defs/REF-array:array_get_reflist
 @set $tmp/prog1=/_defs/REF-array-set:array_put_reflist
 @set $tmp/prog1=/_defs/REF-filter:"$lib/reflist" match "REF-filter" call
