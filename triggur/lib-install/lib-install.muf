@@ -1,4 +1,4 @@
-@prog lib-install=tmp/prog1
+@prog lib-install.muf
 1 19999 d
 i
 ( Common MUF Interface -- Installation/Upgrade Component )
@@ -6,19 +6,18 @@ i
 
 ( V1.0 : {04/04/98} Inception - Triggur )
 ( V1.1 : {01/21/02} Wizbit check fix - Nightwind )
-( V1.2 : {06/03/04} Wizbit check REAL fix, and bootstrap fix - Winged )
+( V1.2 : {06/03/04} Wizbit check REAL fix, and bootstrap fix - Winged )A
 
-$define VERSION "1.1" $enddef 
+
+$define THISVERSION "1.3" $enddef 
 $ifndef __version<Muck2.2fb6.01
-$version 1.001
+$version 1.003
 $lib-version 1.000
 $endif
 
-$define INSTALLCMD "@install;@uninstall" $enddef
-
-$define INSTALLLIB "install" $enddef
-
-$define INSTALLREG "install" $enddef
+$define THISCMD "@install;@uninstall" $enddef
+$define THISLIB "install" $enddef
+$define THISREG "install" $enddef
 
 $define GLOBALENV #0 $enddef
 $define NOTHING #-1 $enddef
@@ -43,8 +42,10 @@ lvar ltint1
 ( WIZ-CHECK: Check to see if wizard permissions exist                 )
 ( ------------------------------------------------------------------- )
 
-: WIZ-CHECK ( -- )
+: WIZ-CHECK ( -- X )
+  ( If the person calling the program is a wizard, let it run )
   me @ "wizard" flag? ( -- i1 ) ( person running has a wizard flag )
+  ( If the prog calling the program runs with wiz perms, let it run )
   caller "wizard" flag? ( -- i1 i2 ) ( caller has a wizard flag )
   caller owner "truewizard" flag? and ( -- i1 i2 )
     ( caller has wiz flag AND owner of caller is a wizard )
@@ -63,44 +64,70 @@ lvar ltint1
   then 
 ;
 
-: FUNCTION-WIZ-CHECK
-  WIZ-CHECK
+: FUNCTION-WIZ-CHECK ( -- X )
+  WIZ-CHECK 1
 ;
 
-: INSTALL-WIZ-CHECK
-  WIZ-CHECK
+: INSTALL-WIZ-CHECK ( -- X )
+  WIZ-CHECK 1
 ;
 
-: UNINSTALL-WIZ-CHECK
-  WIZ-CHECK
+: UNINSTALL-WIZ-CHECK ( -- X )
+  WIZ-CHECK 1
 ;
 
 ( ------------------------------------------------------------------- )
 ( add {or update} a global command {WIZ ONLY}                         )
+( in: d: dbref of program to link the global exit to                  )
+(     s: name of the global exit to create                            )
+( uses: tstr1, tdb1, tstr2                                            )
 ( ------------------------------------------------------------------- )
 : add-global-command ( d s -- )
   tstr1 ! tdb1 !
 
   FUNCTION-WIZ-CHECK
 
-  tstr1 @ ";" instr dup 0 if
-    tstr1 @ swap 1 - strcut pop tstr2 !
-  else
-    pop tstr1 @ swap strcut swap pop tstr2 !
-  then                               ( tstr2 = first command in list )
+  tstr1 @ ( -- s )
+  ";" instr ( -- i ) 
+  dup 0 = ( -- i b ) if ( -- i ) ( if 0, this is a single command )
+    pop ( -- )
+    tstr1 @ tstr2 ! ( -- ) ( single command, set tstr2 to it )
+  else ( -- i ) ( else is a multiple command )
+    tstr1 @ swap ( -- s i )
+    strcut ( -- s2 s1 ) swap pop tstr2 ! ( -- )
+  then ( -- )                        ( tstr2 = first command in list )
 
-  #0 tstr2 @ rmatch int 0 < if  (create exit if it doesnt exist )
+  GLOBALENV tstr2 @ rmatch ( -- d ) int dup 0 < if ( -- i )
+    ( if less than 0, check to see if #-2 or #-3 before creating )
+    dup -1 < if ( -- i )
+      dup -3 = if ( -- i )
+        me @ "INSTALL ERROR: cannot name an exit 'home', install aborted!"
+        notify
+        exit
+      then ( -- i )
+      dup -2 = if ( -- i )
+        me @ "ERROR: Multiple items of the name '" tstr2 @ "' found in #0,"
+        notify
+        me @ "please fix before reattempting installation.  ABORTED." notify
+        exit
+      then ( -- i )
+    then ( -- i )
+    pop ( -- )
     me @ "Installing global '" tstr1 @ strcat "'..." strcat notify
-    #0 tstr1 @ newexit
+    GLOBALENV tstr1 @ newexit
   then
 
-  #0 tstr2 @ rmatch name tstr1 @ stringcmp if    ( update command list )
-    #0 tstr2 @ rmatch dup tstr1 @ setname
-  then
+  GLOBALENV tstr2 @ rmatch ( -- d ) ( either already found or created )
+  name tstr1 @ stringcmp if ( -- )  ( if not the same, update command list )
+    GLOBALENV tstr2 @ rmatch dup tstr1 @ setname
+  then ( -- )
 
-  #0 tstr2 @ rmatch getlink tdb1 @ dbcmp not if (update destination )
-    #0 tstr2 @ rmatch #-1 setlink
-    #0 tstr2 @ rmatch tdb1 @ setlink
+  GLOBALENV tstr2 @ rmatch getlink tdb1 @ dbcmp not if (update destination )
+    me @ "INSTALL: Updating link on '" tstr2 @ strcat
+    "' from #" strcat GLOBALENV tstr2 @ rmatch getlink intostr strcat
+    " to #" strcat tdb1 @ int intostr strcat "." strcat notify
+    GLOBALENV tstr2 @ rmatch dup #-1 setlink
+    tdb1 @ setlink
   then
 ;
 
@@ -320,15 +347,16 @@ lvar ltint1
 
   ( Get the current version of the program to be installed... )
   GLOBALENV "_ver/" ltstr1 @ strcat "/vers" strcat getpropstr ltstr2 ! ( -- )
+
   ( BUGBUG: if ltstr1 doesn't match what the library will eventually be  )
   ( entered as, ltstr2 gets to be empty.  This might be a bit strange if )
   ( the library enters itself as another name?                           )
-    
+   
   ltstr2 @ ltdb1 @ "do-install" call      ( call the program's installer )
 
   ltstr3 !
   ltstr3 @ string? not if
-    me @ "WARNING: program returned non-string on top of stack." notify
+    me @ "ERROR: program returned non-string on top of stack." notify
   then
 
   ltstr3 @ "" stringcmp not if
@@ -405,9 +433,9 @@ lvar ltint1
 
   prog "L" set  ( make it publically linkable )
 
-  prog INSTALLCMD add-global-command
-  prog INSTALLLIB add-global-library 
-  prog INSTALLREG add-global-registry 
+  prog THISCMD add-global-command
+  prog THISLIB add-global-library 
+  prog THISREG add-global-registry 
 
   prog "add-global-command" export-function
   prog "add-global-library" export-function
@@ -424,9 +452,9 @@ lvar ltint1
   prog "UNINSTALL-WIZ-CHECK" export-function
   prog "FUNCTION-WIZ-CHECK" export-function
 
-  prog VERSION set-library-version
+  prog THISVERSION set-library-version
 
-  VERSION 
+  THISVERSION 
 ; 
 
 ( ------------------------------------------------------------------- )
@@ -482,7 +510,7 @@ PUBLIC do-uninstall
 .
 c
 q
-@set lib-install=w
-@action @install;@uninstall=me
-@link @install=lib-install
-@install $tmp/prog1
+@set lib-install.muf=w
+@action @install;@uninstall=me=tmp/exit1
+@link $tmp/exit1=lib-install.muf
+@install lib-install.muf
