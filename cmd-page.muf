@@ -915,16 +915,15 @@ $endif
 ;
   
 : get-timestr ( -- timestr)
-    time rot pop ":"
-    rot dup intostr
-    swap 10 < if "0" swap strcat then
-    strcat over 11 > if
-        "pm" strcat swap 12 - swap
-    else
-        "am" strcat
+    "%I:M%p" systime timefmt tolower
+    dup "0" 1 strncmp not if
+        1 strcut swap pop
     then
-    swap dup not if pop 12 then
-    intostr swap strcat
+;
+  
+  
+: get-timestr24h ( -- timestr)
+    "%H:M" systime timefmt
 ;
   
   
@@ -1025,12 +1024,8 @@ $endif
   
 : cullto5words (string -- string')
     single-space strip
-    " " explode array_make
-	0 4 [..] "" swap
-	foreach
-		swap pop
-		" " swap strcat strcat
-	repeat
+    " " explode_array
+    0 4 [..] " " array_join
 ;
   
 : update-lastpagers (fullname playerdbref -- )
@@ -1293,6 +1288,10 @@ $endif
     dup "%w" instr if
         get-timestr
         "%w" subst
+    then
+    dup "%W" instr if
+        get-timestr24h
+        "%W" subst
     then
   
   
@@ -2019,6 +2018,10 @@ $endif
             get-timestr
             "%w" subst
         then
+        dup "%W" instr if
+            get-timestr24h
+            "%W" subst
+        then
         me @ name "%i" subst
         (derefrange plyrstr mesg mesg format)
         swap "%m" subst
@@ -2182,6 +2185,7 @@ $def }tell }list { me @ }list array_notify
 {
 VERSION "   Changes" strcat
 "---------------------------------------------------------------------------"
+"v3.01  5/20/02  Added %W for 24 hour time in message formats."
 "v3.00  3/16/00  Optimized the code somewhat for FBMUCK 6."
 "v2.51  7/ 3/96  Added %i sub for idle messages to give idle time.  Added"
 "                 #idletime option."
@@ -2247,6 +2251,7 @@ VERSION "   " strcat UPDATED strcat "   Credits" strcat
 "  Lynn_Onyx:    page #mail security loophole fix.  #priority"
 "  Miller:       #check"
 "  Platypus_Bob: #prepending formats, #standard formats"
+"  Sabachka:     24 hour time format substitutions."
 "  Siegfried:    disallowing Guest use of #commands.  dbrefs in aliases."
 "  Snooze:       debugging help with paging without pennies"
 "  tk:           global and personal multi-person aliases"
@@ -2435,12 +2440,13 @@ VERSION "   " strcat UPDATED strcat "   Hints1" strcat
 "  'page tyg=test' will page 'test' to Tygryss."
 "In format strings, %n will be replaced by the name of the player(s) receiv-"
 "  ing the page.  %m will be replaced by the message.  %i will be replaced"
-"  by your name.  %w gets replaced by the time.  These messages are what are"
-"  shown to you when you page to someone."
+"  by your name.  %w gets replaced by the time.  %W gets replaced by 24 hour"
+"  time.  These messages are what are shown to you when you page to someone."
 "In oformat strings, %n will be replaced by your name, %m by the message,"
 "  and %l by your location.  %t will be replaced with the names of all the"
 "  people in a multi-page.  %w will be replaced with the current time."
-"  These messages are what is shown to the player you are paging."
+"  %W gets replaced by the current time in 24 hour format.  These messages"
+"  are what is shown to the player you are paging."
 "If you have a #prepend or #standard format with a %w, it shows you the time"
 "  when a player paged you."
 "Use 'page #hints2' to show the next hints screen."
