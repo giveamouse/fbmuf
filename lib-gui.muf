@@ -261,11 +261,11 @@
      the name that was displayed on the button that was pressed.
 )
  
-$author Revar
+$author Revar Desmera <revar@belfry.com>
 $lib-version 6.002
 $version 6.002
+$note This is a MUF library to make it much simpler to create GUI dialogs.
 
-$def }join }list "" array_join 
  
 : list_parse[ list:spec -- dict:args list:ctrls ]
     ""      var! key
