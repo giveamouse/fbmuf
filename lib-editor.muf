@@ -40,7 +40,7 @@ EDITORheader takes and returns no arguments, but prints out a standard
   message about you entering the editor.  EDITOR calls this automatically.
 )
  
-$version 6.001
+$version 6.002
 $lib-version 6.001
 $author foxen@belfry.com
 
@@ -525,6 +525,33 @@ lvar guisaved
         "< Indented %1 lines starting at line %2, %3 columns. >"
         EDITORmesg 2 -4 rotate EDITindent 1 exit
     then
+    dup "shuffle" stringcmp not over "sort" stringcmp not or if  ( Added Natasha@HLM 22 December 2002 )
+        "shuffle" stringcmp if SORTTYPE_CASEINSENS else SORTTYPE_SHUFFLE then var! sorthow  ( {strrng} mask currline arg3str args1int arg2int )
+        rot if 7 EDITORerror then  ( {strrng} mask currline args1int arg2int )
+ 
+        ( Square away the arguments. )
+        var! line2  ( {strrng} mask currline args1int )
+        dup not if pop 1    then var! line1  ( {strrng} mask currline )
+        var! currline var! mask  ( {strrng} )
+        array_make  ( arrStr )
+        line2 @ not if dup array_count line2 ! then  ( arrStr )
+ 
+        ( Extract a list of the lines to shuffle. )
+        { line1 @ -- begin dup line2 @ < while dup ++ repeat }list  ( arrStr arrLines }  -- and < because arrays are 0-based where lists are 1-based. )
+        over swap array_extract array_vals array_make  ( arrStr arrStrsToShuffle )
+        swap line1 @ -- line2 @ -- array_delrange swap  ( arrStr arrStrsShuffled )
+ 
+        sorthow @ array_sort  ( arrStr arrStrsShuffled )
+ 
+  ( Put the shuffled lines back. )
+        line1 @ -- swap array_insertrange  ( arrStr' )
+ 
+        ( Get ready to return. )
+        array_vals  ( {strrng'} )
+        line1 @ line2 @ 0  ( {strrng'} int int int )
+        sorthow @ SORTTYPE_SHUFFLE = if "shuffl" else "sort" then "< Lines %%1 through %%2 %sed. >" fmtstring EDITORmesg  ( {strrng'} )
+        mask @ currline @ 1 exit  ( {strrng'} mask currline 1 )
+    then
     dup "end" stringcmp not if
         ( {strrng} mask currline arg3str args1int arg2int cmdstr )
         0 0 0 "< Editor exited. >"
@@ -557,6 +584,8 @@ lvar guisaved
 " .repl [st [en]]=/old/new  Replaces old text with new in the given lines."
 " .join [st [en]]         Joins together the lines given in the range."
 " .split [st]=text        Splits given line into 2 lines.  Splits after text"
+" .sort [st en]           Sorts the lines of the list case-insensitively."  ( Added Natasha@HLM 22 December 2002 )
+" .shuffle [st en]        Shuffles the lines of the list."  ( Added Natasha@HLM 22 December 2002 )
 " .left [st [en]]         Aligns all the text to the left side of the screen."
 " .center [st [en]]=cols  Centers the given lines for cols screenwidth."
 " .right [st [en]]=col    Right justifies to column col."
