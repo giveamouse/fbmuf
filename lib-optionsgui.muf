@@ -354,6 +354,7 @@ $def DEFAULT_CAPTION "Edit the following data and click on 'Done' or 'Apply' to 
     item @ "label" [] var! label
     item @ "objtype" [] objtype_normalize dup var! validtypes
     obj @ case
+        #-1 dbcmp when "nothing" array_matchval end
         #-3 dbcmp when "home"    array_matchval end
         ok? not   when "bad"     array_matchval end
         exit?     when "exit"    array_matchval end
@@ -420,8 +421,11 @@ $def DEFAULT_CAPTION "Edit the following data and click on 'Done' or 'Apply' to 
     dscr @ who @ location item @ objtype_check not if
         "Here" out @ array_appenditem out !
     then
+    dscr @ #-1 item @ objtype_check not if
+        "*NOTHING* (#-1)" out @ array_appenditem out !
+    then
     dscr @ #-3 item @ objtype_check not if
-        "Home (#-3)" out @ array_appenditem out !
+        "*HOME* (#-3)" out @ array_appenditem out !
     then
  
     ( Player's inventory )
@@ -492,8 +496,11 @@ $def DEFAULT_CAPTION "Edit the following data and click on 'Done' or 'Apply' to 
         then
         obj @ name exit
     then
+    obj @ #-1 dbcmp if
+        "*NOTHING* (#-1)" exit
+    then
     obj @ #-3 dbcmp if
-        "Home (#-3)" exit
+        "*HOME* (#-3)" exit
     then
     obj @ int "#%i" fmtstring
 ;
@@ -1052,7 +1059,7 @@ lvar opts_info_topnum
             opts_id @ optname @ optioninfo_get var! item
             item @ "type" [] "label" stringcmp not if
                 {LABEL ""
-                    "value"   item @ "label" []
+                    "value"   item @ "value" []
                     "maxwidth" 500
                     "newline" 1
                     "sticky"  "w"
@@ -1676,9 +1683,9 @@ c
 q
 @register lib-optionsgui=lib/optionsgui
 @register #me lib-optionsgui=tmp/prog1
+@register #me lib-optionsgui=tmp/prog1
 @set $tmp/prog1=W
 @set $tmp/prog1=L
 @set $tmp/prog1=V
 @set $tmp/prog1=3
-
 

@@ -1,4 +1,4 @@
-@prog cmd-@objeditgui 
+@prog cmd-@objeditgui
 1 99999 d
 1 i
 ( cmd-@objeditgui  Copyright 7/28/2002 by revar@belfry.com )
@@ -463,7 +463,7 @@ $def yesprop? getpropstr 1 strcut pop "y" stringcmp not
                 "name"   SPECIES_PROP
                 "type"   "option"
                 "label"  "Character species"
-                "help"   "Select the gender that your character will be.  You can change this later."
+                "help"   "Select the species that your character will resemble.  You can change this later."
                 "editable" ALLOW_CUSTOM_SPECIES
                 "options" generate_species_predefineds
                 "save_cb" 'stringprop_save
@@ -515,6 +515,7 @@ $def yesprop? getpropstr 1 strcut pop "y" stringcmp not
                         "label"   "Room's drop-to destination"
                         "help"    "This lets you select where things dropped in this room will be sent to."
                         "objtype" { "room" "bad" }list
+                        "minval"  -3
                         "linkable" 1
                         "value"   obj @ getlink
                     end
@@ -532,6 +533,7 @@ $def yesprop? getpropstr 1 strcut pop "y" stringcmp not
                         "help"    "When someone uses an exit, one of several things may happen, depending on the type of object that is the exit's destination.\r\rIf it is a room, then the user is moved to that room through the exit.\r\rIf it is a player, and that player is set Jump_OK, the user is moved through to exit to the room the destination player is in.\r\rIf it is a thing, then that thing is moved into the user's inventory.\r\rIf it is a MUF program, then that program is run, with any remaining arguments on the line passed as arguments to the program.\r\rIf it is an exit, then this is a 'meta-link', and that remote exit is triggered as if the user were at the destination exit's location.  Exits triggered this way will move Things to the exit's location, instead of into the user's inventory.  An exit may meta-link to multiple exits, to trigger all of them.  You can specify multiple meta-link destinations by seperating them with semicolons (';'s)."
                         "objtype" { "player" "room" "thing" "program" "exit" "bad" }list
                         "linkable" 1
+                        "minval"  -3
                         "value"   obj @ getlinks_array
                     end
                 endcase
@@ -950,15 +952,10 @@ $def yesprop? getpropstr 1 strcut pop "y" stringcmp not
 .
 c
 q
-@register #me cmd-@objeditgui =tmp/prog1
+@register #me cmd-@objeditgui=tmp/prog1
 @set $tmp/prog1=W
 @set $tmp/prog1=L
 @set $tmp/prog1=3
-@propset $tmp/prog1=int:/.debug/errcount:4
-@propset $tmp/prog1=int:/.debug/lastcrash:1029897319
-@propset $tmp/prog1=str:/.debug/lastcrashtime:08/20/02 19:35:19
-@propset $tmp/prog1=str:/.debug/lasterr:lib-optionsgui(#105), line 488; DBCMP: Invalid argument type.
-@propset $tmp/prog1=str:/_/de:A scroll containing a spell called cmd-objeditgui
-@propset $tmp/prog1=str:/_author:Revar Desmera <revar@belfry.com>
-@propset $tmp/prog1=str:/_version:1.003
+@action @objeditgui;@objeditgu;@objeditg;@objedit;@objedi;@objed=#0=tmp/exit1
+@link $tmp/exit1=$tmp/prog1
 
