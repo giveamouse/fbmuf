@@ -40,12 +40,15 @@ EDITORheader takes and returns no arguments, but prints out a standard
   message about you entering the editor.  EDITOR calls this automatically.
 )
  
+$version 6.001
+$lib-version 6.001
+$author foxen@belfry.com
+
 $include $lib/strings
 $include $lib/gui
- 
- 
- 
 $include $lib/stackrng
+ 
+
 $define SRNGcat     sr-catrng     $enddef
 $define SRNGpop     sr-poprng     $enddef
 $define SRNGextract sr-extractrng $enddef
