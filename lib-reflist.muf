@@ -62,8 +62,9 @@ $include $lib/match
 : REF-next (obj reflist currref -- nextref)
   rot rot array_get_reflist
   dup rot array_findval
-  0 [] array_next
-  not if pop #-1 then
+  0 []
+  over swap array_next
+  swap if [] else pop #-1 then
 ;
   
 : REF-list  (objref reflistname -- liststr)
