@@ -6,7 +6,7 @@ i
 
 ( V1.0 : {04/04/98} Inception - Triggur )
 ( V1.1 : {01/21/02} Wizbit check fix - Nightwind )
-( V1.2 : {06/03/04} Wizbit check REAL fix, and bootstrap fix - Winged )A
+( V1.2 : {06/03/04} Wizbit check REAL fix, and bootstrap fix - Winged )
 
 
 $define THISVERSION "1.3" $enddef 
