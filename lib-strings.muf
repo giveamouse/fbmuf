@@ -41,19 +41,9 @@ This routine is useful for parsing command line input:
   
   
 : fillfield (str padchar fieldwidth -- padstr)
-  rot strlen -
-  dup 1 < if
-    pop pop "" exit
-  then
-  swap
-  dup strcat dup strcat
-  dup strcat dup strcat
-  dup strcat
-  begin
-    over over strlen < while
-    dup strcat dup strcat
-  repeat
-  swap strcut pop
+  rot ansi_strlen - dup 1 < if pop pop "" exit then
+  swap over begin swap dup strcat swap 2 / dup not until pop
+  swap ansi_strcut pop
 ;
   
 : STRparse ( s -- s1 s2 s3 )
@@ -115,3 +105,5 @@ q
 @set $tmp/prog1=/_defs/STRstrip:strip
 @set $tmp/prog1=/_defs/STRsts:striptail
 @set $tmp/prog1=/_docs:@list $lib/strings=1-29
+
+
