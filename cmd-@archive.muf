@@ -1,27 +1,28 @@
 @prog cmd-@archive
 1 99999 d
 1 i
-$def PROGNAME  "@archive"
-$def VERSION   "6.000"
-$def COPYRIGHT "Copyright 3/7/2000 by Revar"
-
+( @const object=aefi           )
+( @dig roomname=parent=regname )
+( @act exitname=source=regname )
+( @cre thingname=value=regname )
+( @reg object=regname          )
+  
 $include $lib/strings
 $include $lib/match
 $include $lib/edit
-
+  
 : show-help
 {
-  COPYRIGHT VERSION PROGNAME "%s v%s %s" fmtstring
-  "Syntax: @archive <object>[=1acefil]"
-  " @archive <object>=1    Archive only that object."
-  " @archive <object>=a    Archive all, regardless of owner.  (wizards only)."
-  " @archive <object>=c    Don't archive contents."
-  " @archive <object>=e    Archive objects not in this room's environment."
-  " @archive <object>=f    Don't archive floater child rooms unless linked to."
-  " @archive <object>=i    Archive, including even globally registered objects."
-  " @archive <object>=l    Don't follow links or droptos in archiving."
-  " @archive <object>=p    Don't archive programs at all."
-  "NOTE: Turn off your client's wordwrap before logging an @archive output."
+"Syntax: @archive <object>[=1acefil]"
+" @archive <object>=1    Archive only that object."
+" @archive <object>=a    Archive all, regardless of owner.  (wizards only)."
+" @archive <object>=c    Don't archive contents."
+" @archive <object>=e    Archive objects not in this room's environment."
+" @archive <object>=f    Don't archive floater child rooms unless linked to."
+" @archive <object>=i    Archive, including even globally registered objects."
+" @archive <object>=l    Don't follow links or droptos in archiving."
+" @archive <object>=p    Don't archive programs at all."
+"NOTE: Turn off your client's wordwrap before logging an @archive output."
 } EDITdisplay
 ;
   
@@ -131,12 +132,6 @@ lvar progcnt
   repeat
   strcat
 ;
-
-: flush-output ( -- )
-  me @ descriptors
-  begin swap descrflush 1 - dup 0 = until
-  pop
-;
   
 : dump-lock (d -- )
   me @ "wizard" flag? if pop exit then
@@ -147,13 +142,13 @@ lvar progcnt
   "@flock " rot get-refname strcat
   "=" strcat swap strcat
   me @ swap notify
-  flush-output
+  descr descrflush
 ;
   
   
 : dump-props-loop (s d s -- ) (refname object propdir -- )
   begin
-    flush-output
+    descr descrflush
     (refname object propdir -- )
     begin
       over swap nextprop
@@ -199,23 +194,22 @@ lvar progcnt
           "=dbref:" strcat 3 pick strcat
           ":" strcat swap strcat
           me @ swap notify
-		else
-          dup float? if (A floating point number!  Joy!)
-            ftostr
-            "@propset " 5 pick strcat
-            "=float:" strcat 3 pick strcat
-            ":" strcat swap strcat me @ swap notify
-          else (not a dbref.  Must be a lock.  Fun fun parse time.)
-            (refname object propname propval -- )
-            unparselock translate-lockstr
-            "@propset " 5 pick strcat
-            "=lock:" strcat 3 pick strcat
-            ":" strcat swap strcat
-            me @ swap notify
-          then (float?)
+        else (not a dbref.  Must be a lock.  Fun fun parse time.)
+          (refname object propname propval -- )
+          unparselock translate-lockstr
+          "@propset " 5 pick strcat
+          "=lock:" strcat 3 pick strcat
+          ":" strcat swap strcat
+          me @ swap notify
         then (dbref?)
       then (int?)
     then (string?)
+    (refname object propname -- )
+    over over blessed? if
+        "@bless " 4 pick strcat
+        "=" strcat over strcat
+        me @ swap notify
+    then
     over over propdir? if
       3 pick 3 pick 3 pick
       "/" strcat dump-props-loop
@@ -244,11 +238,11 @@ lvar progcnt
     me @ swap notify
   repeat
   pop pop
-  flush-output
+  descr descrflush
 ;
   
 : dump-obj (d -- )
-  flush-output
+  0 sleep
   dup ok? not if pop exit then
   one? @ if dup originalobj @ dbcmp not if pop exit then then
   owned? @ if dup owner originalobj @ owner dbcmp not if pop exit then then
@@ -400,37 +394,15 @@ lvar progcnt
     me @ swap notify
     me @ "1 99999 d" notify
     me @ "1 i" notify
-    (dbref refname)
-    ( Then we output the program in chunks of 1024 lines, which
-      should be reasonably safe from buffer overflow problems.
-      [1024*80=80k; default max_output setting is 128k, and
-      80-charactor+ lines are rare in MUF.])
-    (dbref refname)
-    over program_getlines
-    dup
-    0
-    begin
-      (... array array start )
-      dup 1023 +
-      (... array start end )
-      dup -4 rotate
-      (... array end array start end )
-      array_getrange
-      dup if
-        ( we must be done! )
-	pop
-	(... array end )
-	pop pop
-	break
-      then
-      flush-output
-      { me @ }list array_notify
-      (... array end )
-      1 +
-      over swap
-      (... array array newstart)
+    ( Old code: me @ "@list #" 4 pick intostr strcat force )
+    over 0 0 program_getlines
+    0 over array_count 1000 for
+        over swap dup 999 + array_getrange
+        { me @ }list array_notify
+        descr descrflush
     repeat
-    flush-output
+    pop
+    (dbref refname)
     me @ "." notify
     me @ "c" notify
     me @ "q" notify
@@ -475,3 +447,8 @@ c
 q
 @register #me cmd-@archive=tmp/prog1
 @set $tmp/prog1=W
+@set $tmp/prog1=L
+@set $tmp/prog1=V
+@set $tmp/prog1=3
+
+
