@@ -147,7 +147,7 @@
      specify the "newline" option to 1, the next position is automatically
      the first column of the next row.  If you don't specify "newline" or
      it is 0, then the next logical position is the column to the right of
-     the current control's rightmost column.  (as modified by "colspan".)
+     the current control's rightmost column.  <as modified by "colspan".>
      MENU controls do not require layout options.
   
   
