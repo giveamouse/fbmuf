@@ -4,9 +4,15 @@
 $include $lib/gui
 $def tell descrcon swap connotify
 $def }join } array_make "" array_join
+ 
+$def URL1 "http://www.belfry.com/pics/revhead.gif"
+$def URL2 "http://www.belfry.com/pics/foxen.gif"
+$def URL3 "http://www.belfry.com/pics/revar_sm.gif"
+$def URL4 "http://www.belfry.com/pics/belfry.jpg"
   
-: generic_handler[ int:dscr str:dlogid str:ctrlid str:event -- int:exit ]
+: generic_handler[ dict:context str:dlogid str:ctrlid str:event -- int:exit ]
     dlogid @ GUI_VALUES_GET var! vals
+    context @ "descr" [] var! dscr
     
     { ctrlid @ " sent " event @ " event!" }join dscr @ tell 
   
@@ -18,14 +24,32 @@ $def }join } array_make "" array_join
     0
 ;
  
-: change_image[ int:dscr str:dlogid str:ctrlid str:event -- int:exit ]
+: change_image[ dict:context str:dlogid str:ctrlid str:event -- int:exit ]
     dlogid @ "imageurl" GUI_VALUE_GET var! newurl
     dlogid @ "varimg" newurl @ GUI_VALUE_SET
     0
 ;
  
+: listbox_add[ dict:context str:dlogid str:ctrlid str:event -- int:exit ]
+    dlogid @ "listbox_add_data" GUI_VALUE_GET var! data
+    dlogid @ "lbox" GUI_VALUE_GET 0 [] var! pos
+    dlogid @ "lbox" "insert" {
+        "values" data @
+        "before" pos @
+    }dict
+    GUI_CTRL_COMMAND
+    0
+;
+ 
+: listbox_del[ dict:context str:dlogid str:ctrlid str:event -- int:exit ]
+    dlogid @ "lbox" GUI_VALUE_GET var! items
+    dlogid @ "lbox" "delete" { "items" items @ }dict GUI_CTRL_COMMAND
+    0
+;
+ 
 : gen_reader_dlog[ -- dict:Handlers str:DlogId ]
     {SIMPLE_DLOG "GUI Controls Test Dialog"
+        "resizable" "both"
         {MENU "filemenu"
             "text" "&File"
             {CHECKBOX "menucbox"
@@ -94,6 +118,9 @@ $def }join } array_make "" array_join
             "value" "Hidden"
         }CTRL
         {NOTEBOOK "nb"
+            "hweight" 1
+            "vweight" 1
+            "sticky" "nsew"
             {PANE "img" "Images"
                 {LABEL ""
                     "value" "The images below are deliberately cropped."
@@ -101,61 +128,54 @@ $def }join } array_make "" array_join
                     "colspan" 3
                     "newline" 1
                 }CTRL
-                {IMAGE "bolatest"
-                    "value" "http://www.furry.org.au/bo/Latest.gif"
-                    "width" 75
-                    "height" 75
+                {IMAGE "pic1"
+                    "value" URL1
+                    "width" 118
+                    "height" 121
                     "sticky" "n"
                     "newline" 0
                     "vweight" 1
                     "hweight" 1
                 }CTRL
                 {IMAGE "varimg"
-                    "value" "http://www.yerf.com/gilemega/bug.gif"
+                    "value" URL2
                     "width" 200
                     "height" 300
                     "newline" 0
-                    "rowspan" 3
+                    "rowspan" 2
                     "sticky" "nsew"
                 }CTRL
                 {IMAGE "revgif"
-                    "value" "http://www.belfry.com/pics/revar_md.gif"
+                    "value" URL3
                     "width" 200
                     "height" 300
                     "newline" 1
-                    "rowspan" 3
+                    "rowspan" 2
                     "sticky" "nsew"
                     "leftpad" 0
                 }CTRL
                 {IMAGE ""
-                    "value" "http://www.furry.org.au/bo/Latest.gif"
-                    "width" 75
-                    "height" 75
+                    "value" URL1
+                    "width" 118
+                    "height" 121
                     "sticky" "se"
                     "toppad" 0
                     "vweight" 1
                     "hweight" 1
                 }CTRL
-                {IMAGE ""
-                    "value" "http://www.furry.org.au/bo/Latest.gif"
-                    "width" 75
-                    "height" 75
-                    "sticky" "nw"
-                    "toppad" 0
-                    "vweight" 1
-                    "hweight" 1
-                }CTRL
                 {COMBOBOX "imageurl"
-                    "value" "http://www.yerf.com/gilemega/bug.gif"
+                    "value" URL2
                     "editable" 0
                     "options" {
-                        "http://www.yerf.com/gilemega/bug.gif"
-                        "http://www.furry.org.au/bo/Latest.gif"
-                        "http://www.belfry.com/pics/revar_md.gif"
+                        URL1
+                        URL2
+                        URL3
+                        URL4
                     }list
                     "colspan" 2
                     "sticky" "ew"
                     "report" 1
+                    "|valchanged"  'change_image
                     "|buttonpress" 'change_image
                     "newline" 0
                 }CTRL
@@ -236,11 +256,35 @@ $def }join } array_make "" array_join
                         "Points      Floating point error checking in MUF"
                     }list
                     "font" "fixed"
+                    "selectmode" "extended" ( can be single, multiple, or extended)
                     "report"   1
                     "height"   5
                     "width"   60
-                    "newline"  0
+                    "newline"  1
+                    "colspan"  3
                     "toppad"   0
+                }CTRL
+                {EDIT "listbox_add_data"
+                    "value" "Sample"
+                    "sticky" "ew"
+                    "width"  30
+                    "hweight" 1
+                    "newline" 0
+                }CTRL
+                {BUTTON "ListAdd"
+                    "text" "&Add"
+                    "width" 8
+                    "sticky" "w"
+                    "dismiss" 0
+                    "newline" 0
+                    "|buttonpress" 'listbox_add
+                }CTRL
+                {BUTTON "ListDel"
+                    "text" "&Delete"
+                    "width" 8
+                    "sticky" "w"
+                    "dismiss" 0
+                    "|buttonpress" 'listbox_del
                 }CTRL
             }PANE
             {PANE "multi" "Text Editing"
@@ -351,3 +395,8 @@ q
 @set $tmp/prog1=W
 @set $tmp/prog1=L
 @set $tmp/prog1=3
+@propset $tmp/prog1=int:/.debug/errcount:61
+@propset $tmp/prog1=int:/.debug/lastcrash:987454465
+@propset $tmp/prog1=str:/.debug/lasterr:lib-gui(#4), line 631; GUI_DLOG_CLOSE: Internal error: GUI not available.
+@propset $tmp/prog1=str:/_/de:A scroll containing a spell called cmd-guitest
+

@@ -167,7 +167,7 @@
      A special key of " default" will be used if it exists, when a gui event
      comes in that does not match one of the more specific handlers.
      Gui callbacks are expected to have the signature:
-     [ int:Dscr str:DlogID str:CtrlID str:GuiEventType -- int:ExitRequested ]
+     [ dict:Context str:DlogID str:CtrlID str:GuiEventType -- int:ExitRequested ]
      Error handler callbacks are expected to have the signature:
      [ int:Dscr str:DlogID str:CtrlID str:ErrText str:ErrCode -- int:ExitRequested ]
   
@@ -197,7 +197,7 @@
      or EVENT_REGISTER, they will be called.
   
      Gui callbacks are expected to have the signature:
-     [ int:Dscr str:DlogID str:CtrlID str:GuiEventType -- int:ExitRequested ]
+     [ dict:Context str:DlogID str:CtrlID str:GuiEventType -- int:ExitRequested ]
      If the callback returns true, then GUI_EVENT_PROCESS will exit.
  
      Gui error handler callbacks are expected to have the signature:
@@ -640,7 +640,7 @@ PUBLIC events_registered
                     then
                 then
             else
-                dscr @ dlogid @ id @ guievent @
+                args @ dlogid @ id @ guievent @
                 { id @ "|" guievent @ }join
                 dests @ dispatch
                 not if
@@ -655,6 +655,7 @@ PUBLIC events_registered
                 dismiss @ if
                     (The dialog was dismissed.  Deregister it.)
                     dlogid @ gui_dlog_deregister
+                    dlogid @ gui_dlog_close
                 then
             then
  
@@ -666,7 +667,7 @@ PUBLIC events_registered
         else
             args @ event @ dup OtherHandlers @ dispatch
             not if
-                4 popn
+                2 popn
             else
                 if
                     (The callback wants us to exit.)
@@ -747,7 +748,6 @@ c
 q
 @register lib-gui=lib/gui
 @register #me lib-gui=tmp/prog1
-@register #me lib-gui=tmp/prog1
 @set $tmp/prog1=L
 @set $tmp/prog1=S
 @set $tmp/prog1=H
@@ -788,3 +788,4 @@ q
 @propset $tmp/prog1=str:/_defs/}DLOG:}list
 @propset $tmp/prog1=str:/_defs/}MENU:}list
 @propset $tmp/prog1=str:/_defs/}PANE:}list
+
