@@ -1,17 +1,16 @@
 All these MUF programs are designed for use with TinyMUCK
-version 2.2fb5.15 or later.  Most will not run on a standard
-TinyMUCK 2.2 or a DaemonMUCK server.
+version 2.2fb6.00rc5 
 
 On a new FB server, that doesn't have the FB libraries set
 up yet, install cmd-@register first, then install std-defs.
 After that, install these libraries in this order:
 
-  def-pmatch
   lib-strings
   lib-stackrng
   lib-props
   lib-lmgr
   lib-edit
+  lib-gui
   lib-editor
   lib-match
   lib-mesg
@@ -28,5 +27,6 @@ To install a program or library, simply quote it to the FB server,
 using tinyfugue's /quote feature, or something equivalent.
 
 NOTE: These installation scripts assume that the player installing
-the programs is a Wizard.
+the programs is a Wizard.  (This, to register globals on room #0,
+and to set the mucker levels appropriately.)
 
