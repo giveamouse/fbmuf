@@ -8,7 +8,7 @@
     Date: August 15th, 2000
   
   Modified by Revar to take advantage of newer MUF primitives, etc.
-  Extended by Revar (foxen@belfry.com).
+  Extended by Revar <foxen@belfry.com>
  
   Note: These were only made for string-list one-dimensional arrays,
         and not dictionaries or any other kind.
