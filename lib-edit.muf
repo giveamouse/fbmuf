@@ -206,8 +206,13 @@ $define SRNGcopy    sr-copyrng    $enddef
 : EDITjoin ( {rng} -- string )
     dup 2 < if pop exit then
     rot STRsts rot STRsls
-    over dup strlen 1 - strcut pop
-    ".!?" swap instr if "  " else " " then
+    over dup strlen 
+    dup if
+      1 - strcut pop
+      ".!?" swap instr if "  " else " " then
+    else
+      pop pop " "
+    then
     swap strcat strcat swap
     1 - EDITjoin
 ;
