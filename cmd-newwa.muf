@@ -1,11 +1,16 @@
 @prog cmd-newwa
 1 99999 d
 1 i
+( WhereAre v6.02   Copyright 01/2002 by Revar revar@belfry.com )
+( Released under the terms of the LGPL.                        )
+     
+$def WA_PROP  "_whereare"
 $def DIR_PROP "_wherearedir"
 $def WF_PROP  "_prefs/con_announce_list"
 $def WF_hide_prop "/_prefs/@con_announce_hide"
 $def WF_show_prop "/_prefs/@con_announce_show"
 $def WF_hideall_prop "/_prefs/con_announce_hideall?"
+$def IDLE_TIME 180 (seconds)
  
 $def NAMENEVER_PROP     "_prefs/whereare/namenever"
 $def NAMEOK_PROP        "_prefs/whereare/nameok"
@@ -16,7 +21,10 @@ $def WHEREISUNFIND_PROP "whereis/_unfindable"
 $def MASTER_FORMAT "%3[cnt]~ %3[act]~%3[wfl]~ %1[adult]~%-25.25[loc]~  "
 $def OLD_FORMAT    "%-34.34[loc]~ %3[cnt]~%1[adult]~"
  
-$def CHECKAGE "yes"
+$undef LASTPUBLIC (use lastpublic timestamp prop for idleness determination )
+$def LASTPUBLIC_PROP "~lastpublic"
+ 
+$undef CHECKAGE
 $ifdef CHECKAGE
   $include $adultlock
   $def AGE_PROP1    "_Banish/force-age?"
@@ -153,9 +161,18 @@ $endif
         then
  
         "cnt" increment_entry
-        who @ descrleastidle descridle 120 < if
+ 
+$ifdef LASTPUBLIC
+        who @ LASTPUBLIC_PROP getpropstr atoi
+        dup not if pop who @ LASTPUBLIC_PROP getpropval then
+        systime swap -
+$else
+        who @ descrleastidle descridle
+$endif
+        IDLE_TIME < if
             "act" increment_entry
         then
+ 
         who @ is_watched_for if
             "wfl" increment_entry
             "wfnames" who @ opts @ append_name
@@ -217,7 +234,13 @@ $endif
     optfield @ "OPT" subst
     array_fmtstrings
     { me @ }list array_notify
-    me @ "-- Tot = Total Awake, Act = Active [idle < 3m], WF = In WatchFor --" notify
+    me @ IDLE_TIME
+$ifdef LASTPUBLIC
+    "-- Tot=Total Awake, Act=Visibly Active in last %isecs, WF=In WatchFor --"
+$else
+    "-- Tot = Total Awake, Act = Active [idle<%isec], WF = In WatchFor --"
+$endif
+    fmtstring notify
 ;
  
 : set_default[ str:args -- ]
@@ -441,6 +464,7 @@ q
 @set $tmp/prog1=L
 @set $tmp/prog1=V
 @set $tmp/prog1=3
+@propset $tmp/prog1=str:/_/de:A scroll containing a spell called cmd-newwa
 @action WhereAre;wa=#0=tmp/exit1
 @link $tmp/exit1=$tmp/prog1
 @propset $tmp/exit1=str:/_/de:wa #help for info.
