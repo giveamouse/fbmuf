@@ -416,6 +416,7 @@ lvar progcnt
       dup -4 rotate
       (... array end array start end )
       array_getrange
+      dup if
         ( we must be done! )
 	pop
 	(... array end )
