@@ -1,4 +1,4 @@
-@prog cmd-guitest
+@prog cmd-bbsgui
 1 99999 d
 1 i
 $include $lib/gui
@@ -223,11 +223,8 @@ $def }join } array_make "" array_join
 .
 c
 q
-@register #me cmd-guitest=tmp/prog1
+@register #me cmd-bbsgui=tmp/prog1
 @set $tmp/prog1=L
 @set $tmp/prog1=3
-@propset $tmp/prog1=int:/.debug/errcount:37
-@propset $tmp/prog1=int:/.debug/lastcrash:977668494
-@propset $tmp/prog1=str:/.debug/lasterr:lib-gui(#4), line 516; ARRAY_NUNION: Argument not an array.
-@propset $tmp/prog1=str:/_/de:A scroll containing a spell called cmd-guitest
+
 
