@@ -177,6 +177,12 @@
      longer exist for purposes of GUI_EVENT_PROCESS.
  
  
+  GUI_DLOG_STATEDATA_SET[ str:eventid any:data -- ]
+     This sets context statedata for a specific GUI dialog.  When a GUI event
+     is processed and the associated callback is called, this data will be
+     passed to the callback as the "statedata" item in the context dictionary.
+  
+ 
   EVENT_REGISTER[ str:eventid addr:handler -- ]
      This registers a callback for a specific event type.  This callback
      will be called by GUI_EVENT_PROCESS if an event comes in that matches.
@@ -185,11 +191,17 @@
      Miscellaneous event callbacks have the signature:
      [ dict:Context str:EventType -- int:ExitRequested ]
   
-      
+       
   EVENT_DEREGISTER[ str:dlogid -- ]
      Deregisters the callback for the given event type, making it no longer
      exist for purposes of GUI_EVENT_PROCESS.
+ 
      
+  EVENT_STATEDATA_SET[ str:eventid any:data -- ]
+     This sets context statedata for a specific event type.  When an event
+     is processed and the associated callback is called, this data will be
+     passed to the callback as the "statedata" item in the context dictionary.
+  
  
   GUI_EVENT_PROCESS[ -- dict:Args str:Event ]
      This waits for and processes events as they come in.  If there are
@@ -235,6 +247,10 @@
      the name that was displayed on the button that was pressed.
 )
  
+$author Revar
+$lib-version 1.1
+$version 1.1
+
 $def }join }list "" array_join 
  
 : list_parse[ list:spec -- dict:args list:ctrls ]
@@ -529,7 +545,8 @@ PUBLIC gui_generate
  
 lvar GuiHandlers
 lvar OtherHandlers
- 
+lvar GuiStateData
+lvar OtherStateData 
  
 : gui_dlog_register[ str:dlogid dict:handlers -- ]
     GuiHandlers @ if
@@ -551,6 +568,13 @@ PUBLIC gui_dlog_register
     else
         { }dict GuiHandlers !
     then
+    GuiStateData @ if
+        GuiStateData @
+        "GUI." dlogid @ strcat
+        array_delitem GuiStateData !
+    else
+        { }dict GuiStateData !
+    then
 ;
 PUBLIC gui_dlog_deregister
  
@@ -563,6 +587,18 @@ PUBLIC gui_dlog_deregister
     then
 ;
 PUBLIC gui_dlogs_registered
+ 
+ 
+: gui_dlog_statedata_set[ str:dlogid any:data -- ]
+    GuiStateData @ if
+        data @ GuiStateData @
+        "GUI." dlogid @ strcat
+        array_setitem GuiStateData !
+    else
+        { "GUI." dlogid @ strcat data @ }dict GuiStateData !
+    then
+;
+PUBLIC gui_dlog_statedata_set
  
  
 : event_register[ str:eventid addr:callback -- ]
@@ -581,6 +617,11 @@ PUBLIC event_register
     else
         { }dict OtherHandlers !
     then
+    OtherStateData @ if
+        OtherStateData @ eventid @ array_delitem OtherStateData !
+    else
+        { }dict OtherStateData !
+    then
 ;
 PUBLIC event_deregister
  
@@ -593,6 +634,16 @@ PUBLIC event_deregister
     then
 ;
 PUBLIC events_registered
+ 
+ 
+: event_statedata_set[ str:eventid any:data -- ]
+    OtherStateData @ if
+        data @ OtherStateData @ eventid @ array_setitem OtherStateData !
+    else
+        { eventid @ data @ }dict OtherStateData !
+    then
+;
+PUBLIC event_statedata_set
  
  
 : gui_event_process[ -- dict:Context str:Event ]
@@ -623,6 +674,10 @@ PUBLIC events_registered
             args @ "errtext"   [] var! errtext
  
             id @ not if "" id ! then
+            GuiStateData @
+            dup not if pop { }list then
+            event @ []
+            args @ "statedata" ->[] args !
  
             errcode @ if
                 dscr @ dlogid @ id @ errtext @ errcode @
@@ -665,6 +720,11 @@ PUBLIC events_registered
                 break
             then
         else
+            OtherStateData @
+            dup not if pop { }list then
+            event @ []
+            args @ "statedata" ->[] args !
+ 
             args @ event @ dup OtherHandlers @ dispatch
             not if
                 2 popn
@@ -743,6 +803,51 @@ PUBLIC gui_event_process
     buttonmap @ swap array_getitem
 ;
 PUBLIC gui_messagebox
+
+$pubdef GUI_DLOGS_REGISTERED   "$lib/gui" match "gui_dlogs_registered"   call
+$pubdef GUI_DLOG_REGISTER      "$lib/gui" match "gui_dlog_register"      call
+$pubdef GUI_DLOG_DEREGISTER    "$lib/gui" match "gui_dlog_deregister"    call
+$pubdef GUI_DLOG_STATEDATA_SET "$lib/gui" match "gui_dlog_statedata_set" call
+
+$pubdef EVENTS_REGISTERED      "$lib/gui" match "events_registered"   call
+$pubdef EVENT_REGISTER         "$lib/gui" match "event_register"      call
+$pubdef EVENT_DEREGISTER       "$lib/gui" match "event_deregister"    call
+$pubdef EVENT_STATEDATA_SET    "$lib/gui" match "event_statedata_set" call
+
+$pubdef GUI_GENERATE           "$lib/gui" match "gui_generate"      call
+$pubdef GUI_EVENT_PROCESS      "$lib/gui" match "gui_event_process" call
+$pubdef GUI_MESSAGEBOX         "$lib/gui" match "gui_messagebox"    call
+
+$pubdef {SIMPLE_DLOG  { D_SIMPLE
+$pubdef {TABBED_DLOG  { D_TABBED
+$pubdef {HELPER_DLOG  { D_HELPER
+
+$pubdef {DATUM     { C_DATUM
+$pubdef {LABEL     { C_LABEL
+$pubdef {IMAGE     { C_IMAGE
+$pubdef {BUTTON    { C_BUTTON
+$pubdef {CHECKBOX  { C_CHECKBOX
+$pubdef {RADIO     { C_RADIOBTN
+$pubdef {PASSWORD  { "password"
+$pubdef {EDIT      { C_EDIT
+$pubdef {MULTIEDIT { C_MULTIEDIT
+$pubdef {COMBOBOX  { C_COMBOBOX
+$pubdef {LISTBOX   { C_LISTBOX
+$pubdef {SCALE     { C_SCALE
+$pubdef {SPINNER   { C_SPINNER
+
+$pubdef {HRULE     { C_HRULE
+$pubdef {VRULE     { C_VRULE
+
+$pubdef {FRAME     { C_FRAME
+$pubdef {MENU      { "menu"
+$pubdef {NOTEBOOK  { C_NOTEBOOK
+$pubdef {PANE      { "notebook_pane"
+
+$pubdef }DLOG      }list
+$pubdef }PANE      }list
+$pubdef }MENU      }list
+$pubdef }CTRL      }list
 .
 c
 q
@@ -751,41 +856,6 @@ q
 @set $tmp/prog1=L
 @set $tmp/prog1=S
 @set $tmp/prog1=H
-@set $tmp/prog1=3
 @set $tmp/prog1=V
-@propset $tmp/prog1=str:/_defs/EVENT_DEREGISTER:"$lib/gui" match "event_deregister" call
-@propset $tmp/prog1=str:/_defs/EVENT_REGISTER:"$lib/gui" match "event_register" call
-@propset $tmp/prog1=str:/_defs/EVENTS_REGISTERED:"$lib/gui" match "events_registered" call
-@propset $tmp/prog1=str:/_defs/GUI_DLOG_DEREGISTER:"$lib/gui" match "gui_dlog_deregister" call
-@propset $tmp/prog1=str:/_defs/GUI_DLOG_REGISTER:"$lib/gui" match "gui_dlog_register" call
-@propset $tmp/prog1=str:/_defs/GUI_DLOGS_REGISTERED:"$lib/gui" match "gui_dlogs_registered" call
-@propset $tmp/prog1=str:/_defs/GUI_EVENT_PROCESS:"$lib/gui" match "gui_event_process" call
-@propset $tmp/prog1=str:/_defs/GUI_GENERATE:"$lib/gui" match "gui_generate" call
-@propset $tmp/prog1=str:/_defs/GUI_MESSAGEBOX:"$lib/gui" match "gui_messagebox" call
-@propset $tmp/prog1=str:/_defs/{BUTTON:{ C_BUTTON
-@propset $tmp/prog1=str:/_defs/{CHECKBOX:{ C_CHECKBOX
-@propset $tmp/prog1=str:/_defs/{COMBOBOX:{ C_COMBOBOX
-@propset $tmp/prog1=str:/_defs/{DATUM:{ C_DATUM
-@propset $tmp/prog1=str:/_defs/{EDIT:{ C_EDIT
-@propset $tmp/prog1=str:/_defs/{FRAME:{ C_FRAME
-@propset $tmp/prog1=str:/_defs/{HELPER_DLOG:{ D_HELPER
-@propset $tmp/prog1=str:/_defs/{HRULE:{ C_HRULE
-@propset $tmp/prog1=str:/_defs/{IMAGE:{ C_IMAGE
-@propset $tmp/prog1=str:/_defs/{LABEL:{ C_LABEL
-@propset $tmp/prog1=str:/_defs/{LISTBOX:{ C_LISTBOX
-@propset $tmp/prog1=str:/_defs/{MENU:{ "menu"
-@propset $tmp/prog1=str:/_defs/{MULTIEDIT:{ C_MULTIEDIT
-@propset $tmp/prog1=str:/_defs/{NOTEBOOK:{ C_NOTEBOOK
-@propset $tmp/prog1=str:/_defs/{PANE:{ "notebook_pane"
-@propset $tmp/prog1=str:/_defs/{PASSWORD:{ "password"
-@propset $tmp/prog1=str:/_defs/{RADIO:{ C_RADIOBTN
-@propset $tmp/prog1=str:/_defs/{SCALE:{ C_SCALE
-@propset $tmp/prog1=str:/_defs/{SIMPLE_DLOG:{ D_SIMPLE
-@propset $tmp/prog1=str:/_defs/{SPINNER:{ C_SPINNER
-@propset $tmp/prog1=str:/_defs/{TABBED_DLOG:{ D_TABBED
-@propset $tmp/prog1=str:/_defs/{VRULE:{ C_VRULE
-@propset $tmp/prog1=str:/_defs/}CTRL:}list
-@propset $tmp/prog1=str:/_defs/}DLOG:}list
-@propset $tmp/prog1=str:/_defs/}MENU:}list
-@propset $tmp/prog1=str:/_defs/}PANE:}list
+@set $tmp/prog1=3
 
