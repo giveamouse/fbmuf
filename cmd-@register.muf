@@ -1,4 +1,4 @@
-@edit cmd-@register
+@prog cmd-@register
 1 9999 d
 1 i
 $define .tell me @ swap notify $enddef
@@ -245,4 +245,5 @@ lvar regprop
 .
 c
 q
-
+@action @register;@registe;@regist;@regis;@regi;@reg=#0=tmp/exit1
+@link $tmp/exit1=cmd-@register
