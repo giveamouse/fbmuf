@@ -1256,7 +1256,7 @@ $endif
   
   
 : page-them-inform (message dbref format to -- )
-    3 pick name "you" swap subst -4 rotate
+    3 pick name " %s([., ]|$)" fmtstring " you\\1" 0 debug_line regsub -4 rotate
     over page_standard? dup 1 = if
         pop over get-prepend
         over over strlen strcut pop
