@@ -58,7 +58,7 @@ $include $lib/strings
 $include $lib/props
 $include $lib/look
 $include $lib/match
-  
+
 : REF-next (obj reflist currref -- nextref)
   rot rot array_get_reflist
   dup rot array_findval
@@ -135,14 +135,14 @@ $include $lib/match
     swap 5 pick if .noisy_pmatch else .noisy_match then
     dup ok? not if pop pop continue then
     4 pick 4 pick rot 4 rotate if
-      3 pick 3 pick 3 pick REF-inlist? if
-        REF-delete "Removed." .tell
+      3 pick 3 pick 3 pick reflist_find if
+        reflist_del "Removed." .tell
       else
         pop pop pop
         "Not in object list." .tell
       then
     else
-      REF-add "Added." .tell
+      reflist_add "Added." .tell
     then
   repeat
 ;
