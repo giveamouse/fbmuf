@@ -2,7 +2,7 @@
 # An example script for a Muck UPS warning system.
 # This script requires the 'nc' netcat program.
 
-# This should match the AUTHTOKEN used in the serverside mcp-externs.muf prog.
+# This should match the AUTHTOKEN used in the serverside mcp-extern.muf prog.
 # No quotes, doublequotes or backslashes allowed.  This script will botch them.
 AUTHTOKEN="NON-TRIVIAL_PASSWORD"
 
