@@ -36,7 +36,7 @@
   
 $def AUTHTOKEN "NON-TRIVIAL_PASSWORD"
 
-$def ALLOWED_HOSTS "localhost" "192.168.0.1"
+$def ALLOWED_HOSTS "localhost" "127.0.0.1"
   
 : check_auth[ int:dscr dict:args -- int:is_ok ]
     { ALLOWED_HOSTS }list dscr @ descrhost 
@@ -63,7 +63,7 @@ $def ALLOWED_HOSTS "localhost" "192.168.0.1"
         {
             "MCP.org-fuzzball-extern-wall" 'do_wall
         }dict
-        dup array_keys
+        dup array_keys array_make
         event_waitfor var! event var! ctx
         event @ [] dup if
             ctx @ "descr" []

@@ -6,6 +6,12 @@
 # No quotes, doublequotes or backslashes allowed.  This script will botch them.
 AUTHTOKEN="NON-TRIVIAL_PASSWORD"
 
+# Machine that the Muck resides on.
+HOST="localhost"
+
+# Port that the Muck is listening to
+PORT="8888"
+
 
 # You shouldn't need to alter these vars.
 MCPAUTHSTR="$RANDOM$RANDOM$RANDOM"
@@ -43,6 +49,6 @@ if [ "x$MESG" != "x" ]; then
 		echo '#$#: '$MCPARGAUTHSTR
 		sleep 1
 		echo 'QUIT'
-	) | nc localhost 8888 >> /dev/null
+	) | nc $HOST $PORT >> /dev/null
 fi
 
