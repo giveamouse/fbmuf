@@ -1,8 +1,10 @@
 @program cmd-page
 1 99999 d
 1 i
-( MUFpage    Copyright 4/15/91 by Garth Minette                  )
+( MUFpage    Copyright 4/15/91 by Fuzzball Software              )
 (                                 foxen@netcom.com               )
+(                                                                )
+( This code is released under the GNU Public Licence.            )
 (                                                                )
   
 ( CONFIGURATION )
@@ -31,13 +33,13 @@ $else
 $ifndef MAILTYPE=NONE
 $ifndef MAILTYPE=PAGEMAIL
 $echo "Warning: Invalid or no mailtype assigned, assuming none."
-$define MAILTYPE NONE $enddef
+$def MAILTYPE NONE
 $endif
 $endif
 $endif
   
-$def VERSION "MUFpage v2.51 by Foxen"
-$def UPDATED "Updated 7/ 3/96"
+$def VERSION "MUFpage v3.00 by Revar"
+$def UPDATED "Updated 3/16/00"
   
 $def descr_idle descrcon conidle
   
@@ -65,17 +67,6 @@ $def descr_idle descrcon conidle
     me @ swap notify
 ;
   
-: split
-    swap over over swap
-    instr dup not if
-        pop swap pop ""
-    else
-        1 - strcut rot
-        strlen strcut
-        swap pop
-    then
-;
-  
 : fillspace
     swap strlen -
     "                                        " ( 40 spaces )
@@ -83,13 +74,13 @@ $def descr_idle descrcon conidle
     swap strcut pop
 ;
   
-$define strip-leadspaces striplead $enddef
-$define strip-trailspaces striptail $enddef
-$define stripspaces strip $enddef
+$def strip-leadspaces striplead
+$def strip-trailspaces striptail
   
 ( mail encryption stuff )
   
   
+( Crypto ver 1: Very stupid encryption system. )
 : transpose (char -- char')
     "ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz 1234567890_"
     over instr dup if
@@ -115,8 +106,7 @@ $define stripspaces strip $enddef
 ;
   
   
-( better encryption. But slower. )
-  
+( Crypto ver 2:  better encryption. But slower. )
 : asc (stringchar -- int)
     dup if
       " 1234567890-=!@#$%&*()_+qwertyuiop[]QWERTYUIOP{}asdfghjkl;'ASDFGHJKL:zxcvbnm,./ZXCVBNM<>?\"`~\\|^"
@@ -148,7 +138,7 @@ $define stripspaces strip $enddef
 ;
   
   
-( Faster encryption )
+( Crypto ver 3: Faster inserver FB5 encryption )
   
 : encrypt3 (key string -- string')
     swap intostr KEY over strcat strcat strencrypt
@@ -250,13 +240,13 @@ Gazer's Sort routines
   
   
 : sort-stringwords (str -- str')
-    stripspaces
+    strip
     dup " " instr if
         " " explode sort
         begin dup 1 > while
             1 - swap " " strcat rot strcat swap
         repeat pop
-        stripspaces
+        strip
     then
 ;
   
@@ -730,7 +720,7 @@ $endif
 ;
   
 : do-proplock-set (str -- )
-    stripspaces match dup not if
+    strip match dup not if
         "page #proploc: I don't know what object you mean!"
         tell pop exit
     then dup #-2 dbcmp if
@@ -821,10 +811,10 @@ $endif
         "Personal alias set." tell
     else
         3 pick " " swap over strcat strcat
-        split " " swap strcat strcat stripspaces
+        split " " swap strcat strcat strip
         "Personal alias cleared." tell
     then
-    stripspaces set-p-aliases
+    strip set-p-aliases
   
     "_page/alias/a-" rot strcat
     myproploc swap rot setpropstr
@@ -871,16 +861,15 @@ $endif
     swap get-g-aliases
     " " swap over strcat strcat
     over if
-        ( Line #888 in pre-cpp source )
         dup 4 pick " " swap over strcat strcat
         instr not if " " strcat 3 pick strcat then
         "Global alias set." tell
     else
         3 pick " " swap over strcat strcat
-        split " " swap strcat strcat stripspaces
+        split " " swap strcat strcat strip
         "Global alias cleared." tell
     then
-    stripspaces set-g-aliases
+    strip set-g-aliases
   
     "_page/galiasown/g-" 3 pick strcat
     trigger @ getlink swap
@@ -899,7 +888,10 @@ $endif
     then
 ;
   
+( Line 888. )
 ( *** END PROPS ON PROG *** )
+
+  
   
   
 : getday ( -- int)
@@ -995,7 +987,7 @@ $endif
   
   
 : comma-format (string -- formattedstring)
-    stripspaces single-space
+    strip single-space
     ", " " " subst
     dup ", " rinstr dup if
         1 - strcut 2 strcut
@@ -1003,11 +995,6 @@ $endif
         swap strcat strcat
     else pop
     then
-;
-  
-  
-: popn (dbrefrange -- )
-    begin dup while swap pop 1 - repeat pop
 ;
   
   
@@ -1037,18 +1024,17 @@ $endif
   
   
 : cullto5words (string -- string')
-    single-space stripspaces
-    " " explode ""
-    begin
-        over while
-        over 6 > if rot pop swap 1 - swap continue then
-        rot dup if " " strcat strcat else pop then
-        swap 1 - swap
-    repeat swap pop
+    single-space strip
+    " " explode array_make
+	0 4 [..] "" swap
+	foreach
+		swap pop
+		" " swap strcat strcat
+	repeat
 ;
   
 : update-lastpagers (fullname playerdbref -- )
-    dup getlastpagers stripspaces
+    dup getlastpagers strip
     " " swap over strcat strcat
     " " 4 rotate over strcat strcat
     over tolower over tolower instr not if
@@ -1059,8 +1045,8 @@ $endif
     then
 ;
   
+( Does anyone actually read these comments? )
 ( Probably not.  *gryn* )
-  
 ( FEEP! )
   
 : do-feep ( -- )
@@ -1172,7 +1158,7 @@ $endif
   
 : list-ignored ( -- string)
     "" me @ getignorestr
-    stripspaces single-space
+    strip single-space
     begin
         dup while
         " " split swap 1 strcut
@@ -1227,7 +1213,7 @@ $endif
   
 : list-priority ( -- string)
     "" me @ getprioritystr
-    stripspaces single-space
+    strip single-space
     begin
         dup while
         " " split swap 1 strcut
@@ -1411,7 +1397,7 @@ $endif
         dup not if pop continue then
         dup "(" 1 strncmp not if
             " " strcat swap strcat
-            ")" split swap pop stripspaces
+            ")" split swap pop strip
             continue
         then
         dup "#" 1 strncmp not if
@@ -1446,7 +1432,7 @@ $endif
         then
         dup player-match? dup -1 = if
             pop pop pop pop
-            stripspaces exit
+            strip exit
         then
         0 > if
             swap pop 5 rotate
@@ -1623,7 +1609,7 @@ $endif
   
   
 : do-getplayers (players -- dbrefrange)
-    stripspaces single-space
+    strip single-space
     remember-pagee
     get-playerdbrefs
     dup if
@@ -2190,18 +2176,13 @@ $endif
 ( help stuff )
   
   
-: show-help-list
-    begin
-        dup while
-        dup 1 + rotate tell
-        1 -
-    repeat pop
-;
-  
+$def }tell }list { me @ }list array_notify
   
 : show-changes
+{
 VERSION "   Changes" strcat
 "---------------------------------------------------------------------------"
+"v3.00  3/16/00  Optimized the code somewhat for FBMUCK 6."
 "v2.51  7/ 3/96  Added %i sub for idle messages to give idle time.  Added"
 "                 #idletime option."
 "v2.50  4/28/96  Added config options, interactive, idle and away warning,"
@@ -2215,7 +2196,7 @@ VERSION "   Changes" strcat
 "v2.30 10/12/91  Added #priority for letting players page you despite haven."
 "v2.29 10/11/91  Added #sleepmsg, #haven and #ignore messages."
 "-- Type 'page #help' to see more info on each command.  \"feeps 4-ever!\" --"
-15 show-help-list
+}tell
 ;
   
 (  old changes:
@@ -2241,10 +2222,11 @@ VERSION "   Changes" strcat
 "v2.02  5/ 1/91  Added #credits and fixed a problem with paging when broke."
 "v2.00  4/27/91  Removed #pose, #opose, #page, #opage and replaced them with"
 "                 #format,  #oformat and 'page !<format> <plyrs>=<msg>'."
-20 )
+)
   
   
 : show-credits
+{
 VERSION "   " strcat UPDATED strcat "   Credits" strcat
 "-------------------------------------------------------------------------"
 "The following people, through questions, comments, or suggestions gave me"
@@ -2275,13 +2257,15 @@ VERSION "   " strcat UPDATED strcat "   Credits" strcat
 "And this leaves only multi-player paging, #version, #changes, #hints,"
 "#index and page-posing as completely my own ideas that no-one else"
 "suggested I add into it.  Oh yes... and #feep."
-30 show-help-list
+}tell
 ;
   
   
 : show-index
+{
 VERSION "   " strcat UPDATED strcat "   Index" strcat
 "----------------------------------------------------------------"
+
 $ifndef MAILTYPE=NONE
 "Aliases            2,A               Multi-paging          1    "
 "Away               4                 Multimax              2    "
@@ -2300,8 +2284,9 @@ $ifndef MAILTYPE=NONE
 "Inform             3                 Summoning             1    "
 "Mailing            1                 Version               1    "
 "Mail-checking      3                 Who                   1    "
-19
+
 $else
+
 "Aliases            2,A               Oformats              3,A,B"
 "Away               4                 Page format           A,B  "
 "Changes            1                 Pose format           A,B  "
@@ -2317,15 +2302,16 @@ $else
 "Inform             3                 Summoning             1    "
 "Multi-paging       1                 Version               1    "
 "Multimax           2                 Who                   1    "
-17
 $endif
+
 "--  1 = page #help      2 = page #help2     3 = page #help3   --"
 "--  4 = page #help4     A = page #hints     B = page #hints2  --"
-rot 2 + show-help-list
+}tell
 ;
   
   
 : show-help
+{
 VERSION "   " strcat UPDATED strcat "   Page1" strcat
 "--------------------------------------------------------------------------"
 "To give your location to another player:     'page <player>'"
@@ -2352,17 +2338,12 @@ $endif
 "To display an index of commands:             'page #index'"
 "To display the next help screen:             'page #help2'"
 "-- Words in <> are parameters.  Parameters in [] are optional. --"
-19
-  
-$ifndef MAILTYPE=NONE
-3 +
-$endif
-  
-show-help-list
+}tell
 ;
   
   
 : show-help2
+{
 VERSION "  " strcat UPDATED strcat "  Page2" strcat
 "------------------------------------------------------------------------"
 "To test if you can page a player:          'page #ping <players>'"
@@ -2385,12 +2366,13 @@ VERSION "  " strcat UPDATED strcat "  Page2" strcat
 "To set the max# of plyrs in a page to you: 'page #multimax <max#players>'"
 "To see your multimax setting:              'page #multimax'"
 "To display the third help page:            'page #help3'"
-22 show-help-list
+}tell
 ;
   
   
   
 : show-help3
+{
 VERSION "   " strcat UPDATED strcat "   Page3" strcat
 "--------------------------------------------------------------------------"
 "To turn on echoing of your message:          'page #echo'"
@@ -2404,26 +2386,22 @@ VERSION "   " strcat UPDATED strcat "   Page3" strcat
 "To set the standard format you receive in:   'page #standard <formatstr>'"
 "To set a format that you see when paging:    'page #format <fmtname>=<fmt>'"
 "To set a format that others receive:         'page #oformat <fmtname>=<fmt>'"
-13
   
 $ifndef MAILTYPE=NONE
 "To forward mail to another player:           'page #forward <players>'"
 "To stop forwarding mail:                     'page #forward #'"
 "To see who mail to you is forwarded to:      'page #forward'"
 "To see if mail is waiting for a player:      'page #check [players]'"
-5 rotate 4 +
 $endif
-  
   
 "To use an object for storing page props on:  'page #proploc <object>'"
 "To display the last page of help:            'page #help4'"
-rot 2 +
-  
-show-help-list
+}tell
 ;
   
   
 : show-help4
+{
 VERSION "   " strcat UPDATED strcat "   Page4" strcat
 "--------------------------------------------------------------------------"
 "To haven yourself so you are unpagable:      'page #haven'"
@@ -2441,11 +2419,12 @@ VERSION "   " strcat UPDATED strcat "   Page4" strcat
 "To view what your current idle timeout is:   'page #idletime'"
 "To set how long your idle timeout is:        'page #idletime <minutes>'"
 "To turn off your idle messages:              'page #idletime #off'"
-17 show-help-list
+}tell
 ;
   
   
 : show-hints
+{
 VERSION "   " strcat UPDATED strcat "   Hints1" strcat
 "--------------------------------------------------------------------------"
 "All page commands can be used abbreviated to unique identifiers."
@@ -2465,11 +2444,12 @@ VERSION "   " strcat UPDATED strcat "   Hints1" strcat
 "If you have a #prepend or #standard format with a %w, it shows you the time"
 "  when a player paged you."
 "Use 'page #hints2' to show the next hints screen."
-19 show-help-list
+}tell
 ;
   
   
 : show-hints2
+{
 VERSION "   " strcat UPDATED strcat "   Hints2" strcat
 "--------------------------------------------------------------------------"
 "There are two standard formats with page: the 'page' format, and the 'pose'"
@@ -2485,14 +2465,11 @@ VERSION "   " strcat UPDATED strcat "   Hints2" strcat
 "  vt100 terminal type."
 "TinyTalk users, to make your pages always beep, use 'page #standard'"
 "  Then all pages to you will be in standard page format."
-  
 "You can specify another object to store the properties used by the page"
 "  program on.  To do this, type 'page #proploc <object>' where <object>"
 "  is either the name (if its in the room) or dbref of the object to use."
 "  #proploc will automatically copy all the page props to the new object."
-19
-  
-show-help-list
+}tell
 ;
   
   
@@ -2552,7 +2529,7 @@ show-help-list
   
   
 : page-main
-    preempt stripspaces
+    preempt strip
     dup "&" 1 strncmp not if
         1 strcut swap pop
         "=" strcat me @
@@ -2658,9 +2635,9 @@ show-help-list
   
 $ifndef MAILTYPE=NONE
             dup "#mail" 2 stringmatch? if
-                pop stripspaces dup "=" instr if
+                pop strip dup "=" instr if
 $ifdef MAILTYPE=PAGEMAIL
-                    "=" split stripspaces swap
+                    "=" split strip swap
                     multi-mail exit
 $else
                     "page #mail" swap QUICKsend exit
@@ -2684,33 +2661,33 @@ $endif
 $endif
   
             dup "#haven" 3 stringmatch? if
-                pop stripspaces dup
+                pop strip dup
                 "#clear" stringcmp not if pop "" then
                 me @ set-havenmsg
                 me @ "haven" set
                 "Haven message and haven bit are now set." tell exit
             then
             dup "#away" 3 stringmatch? if
-                pop stripspaces dup
+                pop strip dup
                 "#clear" stringcmp not if pop "" then
                 me @ set-awaymsg
                 me @ oproploc "_page/away" "yes" setprop
                 "Away message and away flag are now set." tell exit
             then
             dup "#sleepmsg" 3 stringmatch? if
-                pop stripspaces dup
+                pop strip dup
                 "#clear" stringcmp not if pop "" then
                 me @ set-sleepmsg
                 "Sleep message is set." tell exit
             then
             dup "#idlemsg" 3 stringmatch? if
-                pop stripspaces dup
+                pop strip dup
                 "#clear" stringcmp not if pop "" then
                 me @ set-idlemsg
                 "Idle message is set." tell exit
             then
             dup "#idletime" 6 stringmatch? if
-                pop stripspaces dup
+                pop strip dup
                 "#off" stringcmp not if
                     pop 88888888
                 else
@@ -2726,9 +2703,9 @@ $endif
                 exit
             then
             dup "#ignore" 2 stringmatch? if
-                pop stripspaces dup "=" instr if
-                    "=" split stripspaces
-                    swap stripspaces swap
+                pop strip dup "=" instr if
+                    "=" split strip
+                    swap strip swap
                     me @ set-ignoremsg
                     "Ignore message is set." tell
                     dup not if pop exit then
@@ -2736,27 +2713,27 @@ $endif
                 single-space multi-ignore exit
             then
             dup "#!ignore" 3 stringmatch? if
-                pop stripspaces single-space
+                pop strip single-space
                 multi-unignore exit
             then
             dup "#priority" 2 stringmatch? if
-                pop stripspaces single-space
+                pop strip single-space
                 multi-priority exit
             then
             dup "#!priority" 3 stringmatch? if
-                pop stripspaces single-space
+                pop strip single-space
                 multi-unpriority exit
             then
             dup "#format" 2 stringmatch? if
                 pop dup "=" instr if
-                    "=" split stripspaces swap
-                    stripspaces single-space
+                    "=" split strip swap
+                    strip single-space
                     "_" " " subst
                     me @ swap rot
                     set-format-prop
                     "Format set." tell
                 else
-                    stripspaces dup
+                    strip dup
                     me @ swap get-format-prop
                     swap "' set to \"" strcat
                     swap strcat "\"" strcat
@@ -2765,14 +2742,14 @@ $endif
             then
             dup "#oformat" 3 stringmatch? if
                 pop dup "=" instr if
-                    "=" split stripspaces swap
-                    stripspaces single-space
+                    "=" split strip swap
+                    strip single-space
                     "_" " " subst
                     me @ swap rot
                     set-oformat-prop
                     "Oformat set." tell
                 else
-                    stripspaces dup
+                    strip dup
                     me @ swap get-oformat-prop
                     swap "' set to \"" strcat
                     swap strcat "\"" strcat
@@ -2782,8 +2759,8 @@ $endif
             dup "#alias" 2 stringmatch? if
                 pop dup "=" instr if
                     "=" split single-space
-                    stripspaces swap
-                    stripspaces single-space
+                    strip swap
+                    strip single-space
                     dup not if
                         "page: #alias: Alias name cannot be null"
                         tell pop pop exit
@@ -2791,7 +2768,7 @@ $endif
                     "_" " " subst swap
                     set-personal-alias
                 else
-                    stripspaces dup me @
+                    strip dup me @
                     get-alias "Alias \"" rot
                     strcat "\" expands to \""
                     strcat swap strcat "\""
@@ -2799,8 +2776,8 @@ $endif
                 then exit
             then
             dup "#global" 2 stringmatch? if
-                pop "=" split stripspaces single-space
-                swap stripspaces single-space
+                pop "=" split strip single-space
+                swap strip single-space
                 dup not if
                     "page: #global: Alias name cannot be null"
                     tell pop pop exit
@@ -2809,7 +2786,7 @@ $endif
                 set-global-alias exit
             then
             dup "#lookup" 3 stringmatch? if
-                pop single-space stripspaces
+                pop single-space strip
                 list-matching-aliases
                 "Done." tell exit
             then
@@ -2828,7 +2805,7 @@ $else
 $endif
             then
             dup "#erase" 4 stringmatch? if
-                pop stripspaces single-space
+                pop strip single-space
 $ifdef MAILTYPE=PAGEMAIL
                 multi-erase exit
 $else
@@ -2838,7 +2815,7 @@ $endif
 $endif
   
             dup "#multimax" 3 stringmatch? if
-                pop stripspaces atoi
+                pop strip atoi
                 me @ set-multimax
                 "Multi-max set." tell exit
             then
@@ -2855,7 +2832,7 @@ $endif
                 tell exit
             then
             dup "#ping" 3 stringmatch? if
-                pop stripspaces
+                pop strip
                 multi-ping exit
             then
   
@@ -3025,7 +3002,7 @@ $endif
         "Type \"page #help\" for help." tell exit
     then
     dup "=" instr not if
-        stripspaces single-space
+        strip single-space
   
   
 $ifdef RESTRICTMULT
@@ -3048,14 +3025,14 @@ $endif
         multi-summon      (do a summons page)
     else
         "=" split
-        stripspaces
+        strip
         dup pagepose? if
             1 strcut swap pop
             "pose" set-curr-format
         else
             "page" set-curr-format
         then
-        swap stripspaces single-space
+        swap strip single-space
         dup "!" 1 strncmp not if
             " " split swap
             1 strcut swap pop

@@ -199,8 +199,8 @@
     var names { }list names !
   
     var args     { "value" "" }dict args !
-    var ctrls    { }dict            ctrls !
-    var handlers { }dict            handlers !
+    var ctrls    {            }dict ctrls !
+    var handlers {            }dict handlers !
  
     var multipane
     type @ C_NOTEBOOK stringcmp not multipane !
@@ -293,12 +293,11 @@
 ;
   
   
-: gui_generate_simple (intDescr strTitle listDialog -- dictHandlers strDlogID)
+: gui_generate_simple (intDescr strDlogType strTitle listDialog -- dictHandlers strDlogID)
     var title swap title !
+    var dtype swap dtype !
     var descr swap descr !
   
-    descr @ title @ GUI_DLOG_SIMPLE
-    var dlogid dlogid !
     var handlers { }dict handlers !
  
     list_parse swap
@@ -317,10 +316,8 @@
         then
     repeat
     
-    args @ array_count if
-        "Bad dialog description format: expected control array"
-        abort
-    then
+    descr @ dtype @ title @ args @ GUI_DLOG_CREATE
+    var dlogid dlogid !
   
     foreach
         swap pop
@@ -332,10 +329,12 @@
 ;
   
   
-: gui_generate_tabbed (intDescr strTitle listDialog -- dictHandlers strDlogID)
+: gui_generate_paned (intDescr strDlogType strTitle listDialog -- dictHandlers strDlogID)
     var title swap title !
+    var dtype swap dtype !
     var descr swap descr !
-    var panes { }dict panes !
+    var panes { }list panes !
+    var names { }list names !
   
     list_parse
     var ctrls ctrls !
@@ -348,7 +347,7 @@
             args @ 3 pick array_delitem args !
             swap 1 strcut swap pop
             over address? not if
-                "Handlers can only take address artguments."
+                "Handlers can only take address arguments."
                 abort
             then
             handlers @ swap array_setitem handlers !
@@ -357,24 +356,23 @@
         then
     repeat
     
-    args @ array_count if
-        "Bad dialog description format: expected control array"
-        abort
-    then
-  
     ctrls @ foreach
         swap pop
         dup 0 [] "notebook_pane" stringcmp if
-            "Notebooks can only contain panes."
+            "This dialog type can only directly contain panes."
             abort
         else
             dup 1 [] (pane)
+			panes @ array_appenditem panes !
             swap 2 [] (name)
-            panes @ rot array_setitem panes !
+			names @ array_appenditem names !
         then
     repeat
   
-    descr @ title @ panes @ GUI_DLOG_TABBED
+	panes @ args @ "panes" array_setitem args !
+	names @ args @ "names" array_setitem args !
+  
+    descr @ dtype @ title @ args @ GUI_DLOG_CREATE
     var dlogid dlogid !
   
     ctrls @ foreach
@@ -396,92 +394,21 @@
 ;
   
   
-: gui_generate_helper (intDescr strTitle listDialog -- dictHandlers strDlogID)
-    var title swap title !
-    var descr swap descr !
-    var panes { }dict panes !
-  
-    list_parse
-    var ctrls ctrls !
-    var args args !
-    var handlers { }dict handlers !
-  
-    args @
-    foreach
-        over "|" 1 strncmp not if
-            args @ 3 pick array_delitem args !
-            swap 1 strcut swap pop
-            over address? not if
-                "Handlers can only take address artguments."
-                abort
-            then
-            handlers @ swap array_setitem handlers !
-        else
-            pop pop
-        then
-    repeat
-  
-    args @ array_count if
-        "Bad dialog description format: expected control array"
-        abort
-    then
-  
-    ctrls @ foreach
-        swap pop
-        dup 0 [] "notebook_pane" stringcmp if
-            "Notebooks can only contain panes."
-            abort
-        else
-            dup 0 [] (pane)
-            swap 1 [] (name)
-            panes @ rot array_setitem panes !
-        then
-    repeat
-  
-    descr @ title @ panes @ GUI_DLOG_HELPER
-    var dlogid dlogid !
-  
-    ctrls @ foreach
-        swap pop
-        var newpane dup 0 [] newpane !
-        2 9999 [..] list_parse
-        swap array_count if
-            "Bad dialog description format: expected control array"
-            abort
-        then
-        foreach
-            swap pop
-            dlogid @ newpane @ rot gui_generate_ctrl
-            0 handlers @ array_setrange handlers !
-        repeat
-    repeat
-  
-    handlers @ dlogid @
-;
-  
-  
 : gui_generate (intDescr listDlogSpec -- dictHandlers strDlogId)
     var descr swap descr !
     var type dup 0 [] type !
     var title dup 1 [] title !
   
-    type @ "simple_dlog" stringcmp not if
-        descr @ title @
-        rot 2 9999 [..]
+    type @ D_TABBED stringcmp not
+    type @ D_HELPER stringcmp not or if
+	    descr @ type @ title @
+		4 rotate 2 9999 [..]
+		gui_generate_paned
+	else
+        descr @ type @ title @
+        4 rotate 2 9999 [..]
         gui_generate_simple
-    else
-        type @ "tabbed_dlog" stringcmp not if
-            descr @ title @
-            rot 2 9999 [..]
-            gui_generate_tabbed
-        else
-            type @ "helper_dlog" stringcmp not if
-                descr @ title @
-                rot 2 9999 [..]
-                gui_generate_helper
-            then
-        then
-    then
+	then
 ;
 PUBLIC gui_generate
  
@@ -623,7 +550,7 @@ q
 @propset $tmp/prog1=str:/_defs/{DATUM:{ C_DATUM
 @propset $tmp/prog1=str:/_defs/{EDIT:{ C_EDIT
 @propset $tmp/prog1=str:/_defs/{FRAME:{ C_FRAME
-@propset $tmp/prog1=str:/_defs/{HELPER_DLOG:{ "helper_dlog"
+@propset $tmp/prog1=str:/_defs/{HELPER_DLOG:{ D_HELPER
 @propset $tmp/prog1=str:/_defs/{HRULE:{ C_HRULE
 @propset $tmp/prog1=str:/_defs/{LABEL:{ C_LABEL
 @propset $tmp/prog1=str:/_defs/{LISTBOX:{ C_LISTBOX
@@ -631,9 +558,9 @@ q
 @propset $tmp/prog1=str:/_defs/{NOTEBOOK:{ C_NOTEBOOK
 @propset $tmp/prog1=str:/_defs/{PANE:{ "notebook_pane"
 @propset $tmp/prog1=str:/_defs/{SCALE:{ C_SCALE
-@propset $tmp/prog1=str:/_defs/{SIMPLE_DLOG:{ "simple_dlog"
+@propset $tmp/prog1=str:/_defs/{SIMPLE_DLOG:{ D_SIMPLE
 @propset $tmp/prog1=str:/_defs/{SPINNER:{ C_SPINNER
-@propset $tmp/prog1=str:/_defs/{TABBED_DLOG:{ "tabbed_dlog"
+@propset $tmp/prog1=str:/_defs/{TABBED_DLOG:{ D_TABBED
 @propset $tmp/prog1=str:/_defs/{VRULE:{ C_VRULE
 @propset $tmp/prog1=str:/_defs/}CTRL:}list
 @propset $tmp/prog1=str:/_defs/}DLOG:}list
