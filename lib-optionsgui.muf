@@ -152,7 +152,7 @@ $note Released under the LGPL.
                     "name"   "minion_type"
                     "type"   "option"
                     "label"  "Type of minions"
-                    "help"   "This defined the type of minions that you control."
+                    "help"   "This defines the type of minions that you control."
                     "options" { "Ninjas" "Double Agents" "Triple Agents" "Zombies" "Drones" }list
                     "editable" 1
                     "value"  "Ninjas"

@@ -51,7 +51,7 @@
       given message items and info string.
   
     MBOX-msginfo  [refnum base dbref -- infostr]
-      Returns the info string of the goven message number in the message box.
+      Returns the info string of the given message number in the message box.
   
     MBOX-setinfo  [refnum base dbref -- ]
       Sets the info string for the given message number in the message box.
