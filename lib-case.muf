@@ -57,7 +57,7 @@ c
 q
 @register lib-cases=lib/case
 @register #me lib-cases=tmp/prog1
-@set $lib/prog1=V
+@set $tmp/prog1=V
 @set $tmp/prog1=/_/de:A scroll containing a spell called lib-cases
 @set $tmp/prog1=/_defs/case:begin dup
 @set $tmp/prog1=/_defs/default:pop 1 if
