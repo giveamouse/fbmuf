@@ -40,6 +40,15 @@ lvar exitcnt
 lvar thingcnt
 lvar progcnt
   
+: wait-for-buffer ( -- )
+    descr descrflush
+    begin
+        descr descrbufsize
+        4096 < while
+        1 sleep
+    repeat
+;
+ 
 : clear-refnames ( -- )
   me @ "_tempreg" remove_prop
 ;
@@ -123,7 +132,7 @@ lvar progcnt
   dup "*UNLOCKED*" stringcmp not if pop pop "" exit then
   begin
     dup "#" instr over or while
-    "#" .split
+    "#" split
     rot rot strcat swap
     dup atoi intostr strlen
     strcut swap atoi dbref
@@ -141,14 +150,14 @@ lvar progcnt
   translate-lockstr
   "@flock " rot get-refname strcat
   "=" strcat swap strcat
+  wait-for-buffer
   me @ swap notify
-  descr descrflush
 ;
   
   
 : dump-props-loop (s d s -- ) (refname object propdir -- )
   begin
-    descr descrflush
+    wait-for-buffer
     (refname object propdir -- )
     begin
       over swap nextprop
@@ -166,7 +175,7 @@ lvar progcnt
         dup "@" 1 strncmp not if
           (refname object propname propval -- )
           1 strcut dup number? if
-            " " .split swap atoi dbref
+            " " split swap atoi dbref
             dup get-refname dup not if swap intostr then
             swap pop " " strcat swap strcat
           then
@@ -194,13 +203,23 @@ lvar progcnt
           "=dbref:" strcat 3 pick strcat
           ":" strcat swap strcat
           me @ swap notify
-        else (not a dbref.  Must be a lock.  Fun fun parse time.)
-          (refname object propname propval -- )
-          unparselock translate-lockstr
-          "@propset " 5 pick strcat
-          "=lock:" strcat 3 pick strcat
-          ":" strcat swap strcat
-          me @ swap notify
+        else (not a dbref.)
+          dup float? if
+            dup if
+              "@propset " 5 pick strcat
+              "=float:" strcat 3 pick strcat
+              ":" strcat swap ftostr strcat
+              me @ swap notify
+            else pop
+            then
+          else (not a float  Must be a lock.  Fun fun parse time.)
+            (refname object propname propval -- )
+            unparselock translate-lockstr
+            "@propset " 5 pick strcat
+            "=lock:" strcat 3 pick strcat
+            ":" strcat swap strcat
+            me @ swap notify
+          then (float?)
         then (dbref?)
       then (int?)
     then (string?)
@@ -235,14 +254,14 @@ lvar progcnt
     dup "M" 1 strncmp not if 1 strcut swap pop continue then
     "@set " 3 pick get-refname strcat
     "=" strcat swap 1 strcut rot rot strcat
+    wait-for-buffer
     me @ swap notify
   repeat
   pop pop
-  descr descrflush
 ;
   
 : dump-obj (d -- )
-  0 sleep
+  wait-for-buffer
   dup ok? not if pop exit then
   one? @ if dup originalobj @ dbcmp not if pop exit then then
   owned? @ if dup owner originalobj @ owner dbcmp not if pop exit then then
@@ -399,7 +418,7 @@ lvar progcnt
     0 over array_count 1000 for
         over swap dup 999 + array_getrange
         { me @ }list array_notify
-        descr descrflush
+        wait-for-buffer
     repeat
     pop
     (dbref refname)
@@ -422,7 +441,7 @@ lvar progcnt
   
 : archiver
   clear-refnames
-  "=" .split strip swap strip
+  "=" split strip swap strip
   dup not if pop pop show-help exit then
   .match_controlled
   dup not if pop pop exit then
@@ -450,5 +469,4 @@ q
 @set $tmp/prog1=L
 @set $tmp/prog1=V
 @set $tmp/prog1=3
-
 
