@@ -1,5 +1,5 @@
-@program lib-gui
-1 9999 d
+@prog lib-gui
+1 99999 d
 1 i
 (
   GUI_GENERATE[ int:Dscr list:DlogSpec -- dict:Handlers str:DlogID ]
@@ -63,6 +63,50 @@
                  }CTRL
              }PANE
          }CTRL
+     The {MENU control is different from most controls, as you don't
+     specify any layout information for it.  Instead, you just add in
+     {BUTTON controls for menu commands, {CHECKBOXes and {RADIOs for
+     the correspending menu item types, and {HRULEs for line separators.
+     You can also nest {MENUs to get cascading menus.  If you create a
+     menu item with an & in the display name, then the next character
+     will be underlined, and you can select the menu with that letter
+     when the menu is displayed.  You must end a {MENU block with the
+     end token }MENU.  A menu declaration may look like:
+         {MENU "filemenu"
+             text "&File"
+             {MENU "cascade"
+                 "text" "&Cascading menu"
+                 {RADIO "mrad1"
+                     "text" "Radio button &1"
+                    "selvalue" 1
+                    "valname" "menuradioval"
+                 }CTRL
+                 {RADIO "mrad2"
+                     "text" "Radio button &2"
+                    "selvalue" 2
+                    "valname" "menuradioval"
+                 }CTRL
+                 {RADIO "mrad3"
+                     "text" "Radio button &3"
+                    "selvalue" 3
+                    "valname" "menuradioval"
+                    "value" 2
+                 }CTRL
+             }MENU
+             {CHECKBOX "mcb1"
+                 "text" "Checkbox"
+                 "value" 1
+                 "report" 1
+                 "|buttonpress" 'mcb1-clicked-cb
+             }CTRL
+             {HRULE "" }CTRL
+             {BUTTON "exit"
+                 "text" "E&xit"
+                 "dismiss" 1
+                 "|buttonpress" 'exit-cb
+             }CTRL
+         }MENU
+  
      The supported controls are:
          {LABEL       A static test label.
          {HRULE       A horizontal line
@@ -75,13 +119,18 @@
          {SPINNER     An integer entry field with up/down buttons.
          {SCALE       A floating point slider control.
          {LISTBOX     A control for selecting one or more options.
-         {FRAME       A box to put other controls in, with optional caption and outline.
-         {NOTEBOOK    A notebook container, to organize controls into related panes.
+         {FRAME       A box to put other controls in, with optional captionr
+                        and outline.
+         {NOTEBOOK    A notebook container, to organize controls into related
+                        panes.
+         {MENU        A menu or sub-menu.  Can contain labels, buttons,
+                        checkboxes, and other menus.
+  
      All controls support some special layout options.  These are:
          "sticky"     The sides of the cell to which this control will
-                       stick.  Contains one or more of N, S, E, and W.
+                        stick.  Contains one or more of N, S, E, and W.
          "newline"    If false, next control will be to the right.  If true,
-                       then it will be at the start of the next row.
+                        then it will be at the start of the next row.
          "colskip"    Number of columns to skip before placing this control.
          "colspan"    Number of columns this control's cell will span across.
          "rowspan"    Number of rows this control's cell will span across.
@@ -195,7 +244,7 @@ $def }join }list "" array_join
     args @ ctrls @
 ;
   
-  
+   
 : gui_generate_ctrl[ str:dlogid str:pane list:ctrlspec -- dictHandlers ]
     ctrlspec @ 0 []
     var! type
@@ -679,12 +728,15 @@ q
 @propset $tmp/prog1=str:/_defs/{FRAME:{ C_FRAME
 @propset $tmp/prog1=str:/_defs/{HELPER_DLOG:{ D_HELPER
 @propset $tmp/prog1=str:/_defs/{HRULE:{ C_HRULE
+@propset $tmp/prog1=str:/_defs/{IMAGE:{ C_IMAGE
 @propset $tmp/prog1=str:/_defs/{LABEL:{ C_LABEL
 @propset $tmp/prog1=str:/_defs/{LISTBOX:{ C_LISTBOX
+@propset $tmp/prog1=str:/_defs/{MENU:{ "menu"
 @propset $tmp/prog1=str:/_defs/{MULTIEDIT:{ C_MULTIEDIT
 @propset $tmp/prog1=str:/_defs/{NOTEBOOK:{ C_NOTEBOOK
 @propset $tmp/prog1=str:/_defs/{PANE:{ "notebook_pane"
 @propset $tmp/prog1=str:/_defs/{PASSWORD:{ "password"
+@propset $tmp/prog1=str:/_defs/{RADIO:{ C_RADIOBTN
 @propset $tmp/prog1=str:/_defs/{SCALE:{ C_SCALE
 @propset $tmp/prog1=str:/_defs/{SIMPLE_DLOG:{ D_SIMPLE
 @propset $tmp/prog1=str:/_defs/{SPINNER:{ C_SPINNER
@@ -692,4 +744,5 @@ q
 @propset $tmp/prog1=str:/_defs/{VRULE:{ C_VRULE
 @propset $tmp/prog1=str:/_defs/}CTRL:}list
 @propset $tmp/prog1=str:/_defs/}DLOG:}list
+@propset $tmp/prog1=str:/_defs/}MENU:}list
 @propset $tmp/prog1=str:/_defs/}PANE:}list
