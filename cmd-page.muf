@@ -915,7 +915,7 @@ $endif
 ;
   
 : get-timestr ( -- timestr)
-    "%I:M%p" systime timefmt tolower
+    "%I:%M%p" systime timefmt tolower
     dup "0" 1 strncmp not if
         1 strcut swap pop
     then
@@ -923,7 +923,7 @@ $endif
   
   
 : get-timestr24h ( -- timestr)
-    "%H:M" systime timefmt
+    "%H:%M" systime timefmt
 ;
   
   
