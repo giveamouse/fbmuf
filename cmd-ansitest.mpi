@@ -1,0 +1,6 @@
+@rec $ansitest
+@action ansitest=#0=ansitest
+@lock $ansitest=me&!me
+@link $ansitest=#0
+@fail $ansitest={null:{foreach:styl,{mklist:,bold,underline,flash,dim,reverse},{tell:{attr:{&styl},{&styl}}{nl}{parse:fg,{mklist:,black,red,yellow,green,cyan,blue,magenta,white},{parse:bg,{mklist:,bg_black,bg_red,bg_yellow,bg_green,bg_cyan,bg_blue,bg_magenta,bg_white},{attr:{&styl},{&fg},{&bg},test },{nl},}}}{tell: }}}
+
