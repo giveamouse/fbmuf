@@ -1,4 +1,4 @@
-@edit lib-install
+@prog lib-install=tmp/prog1
 1 19999 d
 i
 ( Common MUF Interface -- Installation/Upgrade Component )
@@ -6,6 +6,7 @@ i
 
 ( V1.0 : {04/04/98} Inception - Triggur )
 ( V1.1 : {01/21/02} Wizbit check fix - Nightwind )
+( V1.2 : {06/03/04} Wizbit check REAL fix, and bootstrap fix - Winged )
 
 $define VERSION "1.1" $enddef 
 
@@ -17,9 +18,8 @@ $define INSTALLREG "install" $enddef
 
 ($define FUNCTION-WIZ-CHECK me @ "W" flag? not caller "W" flag? not or if me @ "ERROR: Only a wizard can use this function." notify exit then $enddef)
 ( This was apparently hanging things up before... the wizcheck's not working on modern mucks.  Instead, @lock the @install command to be run ONLY by #1 Wizard )
-$define FUNCTION-WIZ-CHECK 1 pop $enddef
+( $define FUNCTION-WIZ-CHECK 1 pop $enddef )
 
- 
 lvar tstr1
 lvar tstr2
 lvar tstr3
@@ -33,6 +33,42 @@ lvar ltstr3
 lvar ltdb1
 lvar ltdb2
 lvar ltint1
+
+( ------------------------------------------------------------------- )
+( WIZ-CHECK: Check to see if wizard permissions exist                 )
+( ------------------------------------------------------------------- )
+
+: WIZ-CHECK ( -- )
+  me @ "wizard" flag? ( -- i1 ) ( person running has a wizard flag )
+  caller "wizard" flag? ( -- i1 i2 ) ( caller has a wizard flag )
+  caller owner "truewizard" flag? and ( -- i1 i2 )
+    ( caller has wiz flag AND owner of caller is a wizard )
+  dup if ( if caller has wizard flag... )
+    caller "setuid" flag? ( -- i1 i2 ics )
+      ( does the caller have a setuid flag? )
+    caller "harduid" flag? ( -- i1 i2 ics ich )
+      ( does the caller have a harduid flag? )
+    and ( -- i1 i2 icsh ) not ( if caller both SH, caller has no wizbit )
+    and ( -- i1 iwizperm )
+  then
+  or ( -- i )  ( one of the two has a wizbit flag )
+  not if
+    "ERROR: This function may only be called by a wizard!" me @ swap notify
+    exit
+  then 
+;
+
+: FUNCTION-WIZ-CHECK
+  WIZ-CHECK
+;
+
+: INSTALL-WIZ-CHECK
+  WIZ-CHECK
+;
+
+: UNINSTALL-WIZ-CHECK
+  WIZ-CHECK
+;
 
 ( ------------------------------------------------------------------- )
 ( add {or update} a global command {WIZ ONLY}                         )
@@ -145,7 +181,9 @@ lvar ltint1
   FUNCTION-WIZ-CHECK
 ( ALSO CAUSING PROBLEMS?
   tdb1 @ "_lib-name" getpropstr "" strcmp not if
-    me @ "$LIB/INSTALL: CONFIGURATION ERROR: export-function cannot be called until after export-global-library is called!" notify
+    me @ "$LIB/INSTALL: CONFIGURATION ERROR: export-function cannot "
+         "be called until after export-global-library is called!" strcat
+    notify
     exit
   then
 )
@@ -287,11 +325,9 @@ lvar ltint1
 ( PUBLIC: Perform installation/upgrade of this command                )
 ( ------------------------------------------------------------------- )
 : do-install ( s -- s )
-  me @ "W" flag? not caller "W" flag? not or if
-    me @ "ERROR: Only a wizard can use this function." notify
-    "" exit
-  then
- 
+
+  INSTALL-WIZ-CHECK
+
   prog "W" flag? not if 
     me @ "ADMIN: Do @SET #" prog intostr strcat "=W" strcat notify
     me @ "ADMIN: Then re-run " command @ strcat " #" strcat prog intostr strcat
@@ -316,11 +352,14 @@ lvar ltint1
   prog "remove-global-library" export-function
   prog "remove-global-registry" export-function
 
-  prog "INSTALL-WIZ-CHECK" "me @ \"W\" flag? not caller \"W\" flag? not or if me @ \"ERROR: Only a wizard can use this function.\" notify \"\" exit then"
+(  prog "INSTALL-WIZ-CHECK" "me @ \"W\" flag? not caller \"W\" flag? not or if me @ \"ERROR: Only a wizard can use this function.\" notify \"\" exit then"
       export-macro
 
   prog "UNINSTALL-WIZ-CHECK" "me @ \"W\" flag? not caller \"W\" flag? not or if me @ \"ERROR: Only a wizard can use this function.\" notify \"\" exit then"
-      export-macro
+      export-macro )
+  prog "INSTALL-WIZ-CHECK" export-function
+  prog "UNINSTALL-WIZ-CHECK" export-function
+  prog "FUNCTION-WIZ-CHECK" export-function
 
   prog VERSION set-library-version
 
@@ -333,11 +372,8 @@ lvar ltint1
 : do-uninstall ( s -- s )
   pop
 
-  me @ "W" flag? not caller "W" flag? not or if
-    me @ "ERROR: Only a wizard can use this function." notify
-    "" exit
-  then
-  
+  UNINSTALL-WIZ-CHECK
+
   prog INSTALLCMD remove-global-command
   prog INSTALLLIB remove-global-library 
   prog INSTALLREG remove-global-registry 
@@ -378,9 +414,16 @@ PUBLIC get-library-version
 PUBLIC remove-global-command
 PUBLIC remove-global-library
 PUBLIC remove-global-registry
+PUBLIC INSTALL-WIZ-CHECK
+PUBLIC UNINSTALL-WIZ-CHECK
+PUBLIC FUNCTION-WIZ-CHECK
 
 PUBLIC do-install
 PUBLIC do-uninstall
 .
 c
 q
+@set lib-install=w
+@action @install;@uninstall=me
+@link @install=lib-install
+@install $tmp/prog1
