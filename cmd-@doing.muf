@@ -30,7 +30,7 @@
     dup not
     if
         pop
-        me @ "You are curently doing: " me @ "_/do" getpropstr strcat notify 
+        me @ "You are currently doing: " me @ "_/do" getpropstr strcat notify 
         exit
     then
     dup tolower "#c" 2 strncmp not
