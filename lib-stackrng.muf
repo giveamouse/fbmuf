@@ -50,7 +50,7 @@
   
   
 : copyrange ( {rng} ... offset num pos -- {rng} ... {subrng} )
-	var pos pos !
+	var pos 1 - pos !
 	var num num !
     array_make var stuff stuff !
 	array_make var range range !
@@ -69,7 +69,7 @@
   
   
 : extractrange ( {rng} ... offset num pos -- {rng'} ... {subrng} )
-	var pos pos !
+	var pos 1 - pos !
 	var num num !
     array_make var stuff stuff !
 	array_make var range range !
@@ -101,20 +101,21 @@
 ;
   
 : insertrange  ( {rng1} ... {rng2} offset pos-- {rng} ... )
-	var pos pos !
-    var offset offset @
+	var pos 1 - pos !
+    var offset offset !
     array_make var newrng newrng !
     offset @ array_make var stuff stuff !
-	array_make var range range !
+	array_make
 
-    range @ pos @ newrng @ array_insertrange
-    range @ array_vals
+    pos @ newrng @ array_insertrange
+    array_vals
     stuff @ array_vals pop
 ;
   
   
 : filterrange ( {rng} funcaddr -- {rng'} {filtrdrng} )
    var cb cb !
+   var outrng { }list outrng !
    array_make var range range !
    range @ foreach
       dup cb @ execute if
