@@ -4,9 +4,10 @@ i
 ( Common MUF Interface -- Installation/Upgrade Component )
 ( Designed 3/98 by Triggur )
 
-( V1.0 : {04/04/98} Inception - Triggur )
-( V1.1 : {01/21/02} Wizbit check fix - Nightwind )
-( V1.2 : {06/03/04} Wizbit check REAL fix, and bootstrap fix - Winged )
+( V1.0  : {04/04/98} Inception - Triggur )
+( V1.1  : {01/21/02} Wizbit check fix - Nightwind )
+( V1.2  : {06/03/04} Wizbit check REAL fix, and bootstrap fix - Winged )
+( V1.21 : {06/18/04} Make the program compile again - Schneelocke )
 
 
 $define THISVERSION "1.3" $enddef 
@@ -34,6 +35,7 @@ lvar tint1
 lvar ltstr1
 lvar ltstr2
 lvar ltstr3
+lvar ltstr4
 lvar ltdb1
 lvar ltdb2
 lvar ltint1
@@ -465,9 +467,9 @@ lvar ltint1
 
   UNINSTALL-WIZ-CHECK
 
-  prog INSTALLCMD remove-global-command
-  prog INSTALLLIB remove-global-library 
-  prog INSTALLREG remove-global-registry 
+  prog THISCMD remove-global-command
+  prog THISLIB remove-global-library 
+  prog THISREG remove-global-registry 
 
   me @ "The program can now be removed entirely by typing @rec #" prog intostr
       strcat notify
