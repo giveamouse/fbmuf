@@ -9,6 +9,10 @@ i
 ( V1.2 : {06/03/04} Wizbit check REAL fix, and bootstrap fix - Winged )
 
 $define VERSION "1.1" $enddef 
+$ifndef __version<Muck2.2fb6.01
+$version 1.001
+$lib-version 1.000
+$endif
 
 $define INSTALLCMD "@install;@uninstall" $enddef
 
@@ -16,9 +20,10 @@ $define INSTALLLIB "install" $enddef
 
 $define INSTALLREG "install" $enddef
 
-($define FUNCTION-WIZ-CHECK me @ "W" flag? not caller "W" flag? not or if me @ "ERROR: Only a wizard can use this function." notify exit then $enddef)
-( This was apparently hanging things up before... the wizcheck's not working on modern mucks.  Instead, @lock the @install command to be run ONLY by #1 Wizard )
-( $define FUNCTION-WIZ-CHECK 1 pop $enddef )
+$define GLOBALENV #0 $enddef
+$define NOTHING #-1 $enddef
+$define AMBIGUOUS #-2 $enddef
+$define HOME #-3 $enddef
 
 lvar tstr1
 lvar tstr2
@@ -231,37 +236,100 @@ lvar ltint1
 ;
 
 ( ------------------------------------------------------------------- )
-( call a MUF program's do-install function                            )
+( NAME:  perform-install                                              )
+( Function: call a MUF program's do-install word                      )
+( input: s1 --                                                        )
+(    s1: string describing the library to install                     )
+( output: --                                                          )
+( vars:  ltstr1, ltstr2, ltstr3, ltstr4, ltdb1                        )
 ( ------------------------------------------------------------------- )
+
 : perform-install ( s -- )
-  ltstr1 !
+          ltstr1 ! ( -- )
+  NOTHING ltdb1  ! ( -- )
 
-  FUNCTION-WIZ-CHECK
+  FUNCTION-WIZ-CHECK ( -- )
 
-  #-1 ltdb1 !
-
-  ltstr1 @ 1 strcut pop "#" stringcmp not if (is a dbref)
-    ltstr1 @ 1 strcut swap pop atoi dbref dup ltdb1 ! name ltstr1 !
-  else
-    #0 "_ver/" tstr1 @ strcat "/prog" strcat getpropstr dup "" strcmp not if
-      me @ "ERROR: Unknown program.  Use MUF name or dbref." notify
-      pop exit
+  ltstr1 @ match ( -- d )
+  dup intostr atoi ( -- d i ) -1 > if ( -- d )
+    dup program? if ( -- d )
+      ( We'll assume that we want to do based on the matched argument )
+      dup ltdb1 ! ( -- d )
+      name ltstr1 ! ( -- )
+    else
+      pop ( it matched something other than a program, we don't want )
     then
-    int dbref name ltstr1 !
+  else
+    pop ( it's NOTHING, AMBIGUOUS, or HOME, none of which we want )
   then
 
-  ltdb1 @ #-1 dbcmp if
-    #0 "_ver/" ltstr1 @ strcat "/prog" strcat getprop dbref ltdb1 !
+  ( sanity check just to be sure )
+  ltstr1 @ string? not if
+    "perform-install: ltstr1 is not a string!" abort
   then
-  #0 "_ver/" ltstr1 @ strcat "/vers" strcat getpropstr ltstr2 !
+  ltdb1 @ dbref? not if
+    "perform-install: ltdb1 is not a dbref!" abort
+  then
 
-  ltdb1 @ program? not if
-    me @ "@INSTALL ERROR: Dbref #" ltdb1 @ intostr strcat " is not a program."
-        strcat notify
+  ( if it's NOTHING, we still need to find the program... ) 
+  ltdb1 @ NOTHING dbcmp not if ( -- )
+    GLOBALENV ( -- d )
+    "_ver/" ltstr1 @ "/prog" strcat strcat ( -- d s )
+    dup ltstr4 ! ( -- d s )   ( ...save propname for later use... )
+    getprop ( -- x )
+    dup string? not if ( -- x )
+      dup int?   ( -- x i1 )
+      swap       ( -- i1 x )
+      dup dbref? ( -- i1 x i2 )
+      rot        ( -- x i2 i1 )
+      or         ( -- x i ) ( x is either an int or dbref, can be used )
+      not if ( -- x )
+        pop
+        "ERROR: #0=" ltstr4 @ strcat 
+        " is not a usable dbref -- cannot continue." strcat
+        me @ swap notify
+        exit
+      then
+      intostr ( -- s ) 
+    then      
+    dup "" strcmp not ( -- s i ) if ( ...if string is empty... )
+      pop ( get rid of the empty string on the stack )
+      me @ "ERROR: Unknown program.  Use MUF name or dbref." notify
+      exit
+    then ( -- s )
+    ( we have a dbref )
+    atoi dbref ( -- d ) dup ( -- d d )
+    program? not if ( -- d )
+      "ERROR: #0=" ltstr4 @ " points to #" strcat strcat ( -- d s )
+      swap intostr strcat ( -- s)
+      ", which is not a program!" strcat ( -- s )
+      me @ swap notify ( -- )
+      exit 
+    then ( -- d )
+    ( it's a dbref to a program!  yippee! )
+    dup name ( -- d s )
+    ltstr1 ! ( -- d )
+    ltdb1 ! ( -- )
+  then ( -- )
+
+  NOTHING ltdb1 @ dbcmp if ( -- )
+    "ERROR: Should not be able to get here -- ltdb1 is #-1!"
+    me @ swap notify
     exit
   then
 
-  ltstr2 @ ltdb1 @ "do-install" call ltstr3 !   ( call the program's installer )
+  ( Get the current version of the program to be installed... )
+  GLOBALENV "_ver/" ltstr1 @ strcat "/vers" strcat getpropstr ltstr2 ! ( -- )
+  ( BUGBUG: if ltstr1 doesn't match what the library will eventually be  )
+  ( entered as, ltstr2 gets to be empty.  This might be a bit strange if )
+  ( the library enters itself as another name?                           )
+    
+  ltstr2 @ ltdb1 @ "do-install" call      ( call the program's installer )
+
+  ltstr3 !
+  ltstr3 @ string? not if
+    me @ "WARNING: program returned non-string on top of stack." notify
+  then
 
   ltstr3 @ "" stringcmp not if
     me @ "WARNING: Installation not completed." notify
@@ -352,11 +420,6 @@ lvar ltint1
   prog "remove-global-library" export-function
   prog "remove-global-registry" export-function
 
-(  prog "INSTALL-WIZ-CHECK" "me @ \"W\" flag? not caller \"W\" flag? not or if me @ \"ERROR: Only a wizard can use this function.\" notify \"\" exit then"
-      export-macro
-
-  prog "UNINSTALL-WIZ-CHECK" "me @ \"W\" flag? not caller \"W\" flag? not or if me @ \"ERROR: Only a wizard can use this function.\" notify \"\" exit then"
-      export-macro )
   prog "INSTALL-WIZ-CHECK" export-function
   prog "UNINSTALL-WIZ-CHECK" export-function
   prog "FUNCTION-WIZ-CHECK" export-function
@@ -384,12 +447,7 @@ lvar ltint1
   VERSION 
 ; 
 
-: main ( s -- )
-
-  dup "" stringcmp not if
-    me @ "USAGE:  @install #<program or library dbref>" notify
-    0 exit
-  then
+: main ( s -- i )
 
   command @ "@install" stringcmp not if
     perform-install
@@ -400,8 +458,9 @@ lvar ltint1
     perform-uninstall
     0 exit
   then
-  
-  me @ "Unknown CMI call " command @ strcat "." strcat notify
+
+  me @ "USAGE:  @install #<prog/lib dbref>" notify
+  0 exit
 ;
 
 PUBLIC add-global-command
