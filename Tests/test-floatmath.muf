@@ -53,16 +53,22 @@
 ;
  
  
+: properties_test[ -- ]
+    prog "_testprop" pi setprop
+    prog "_testprop" getprop pi = not if "Property Pi != Pi" abort then
+;
+ 
+ 
 : main[ str:args -- ]
     simple_test
     trig_test
+    properties_test
 ;
  
 .
 c
 q
-@register #me test-floatmath=tmp/exit1
 @register #me test-floatmath=tmp/prog1
 @set $tmp/prog1=3
-@propset $tmp/prog1=str:/_/de:A scroll containing a spell called test-floatmath
+@propset $tmp/prog1=float:/_testprop:3.141592653589793
 
