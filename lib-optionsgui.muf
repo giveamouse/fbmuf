@@ -19,10 +19,14 @@
 (     Made dbref options use combobox.                             )
 ( v1.103 --  8/29/2002 -- Revar <revar@belfry.com>                 )
 (     Made dbref options update combobox with matched object name. )
+( v1.104 --  8/18/2003 -- Revar <revar@belfry.com>                 )
+(     Made fallback to $lib/optionsmenu in textmode.               )
+(     Added opts_id to callback data.                              )
+(     Split optionsinfo calls into $lib/optionsinfo.               )
 
 $author Revar Desmera <revar@belfry.com>
-$version 1.103
-$lib-version 1.101
+$version 1.104
+$lib-version 1.102
 $note Released under the LGPL.
 
 (
@@ -209,6 +213,7 @@ $note Released under the LGPL.
         The extradata dictionary contains the following extra data:
             "descr"        The descriptor the dialog was displayed to.
             "dlogid"       The dialog's ID.
+            "opts_id"      The optionsinfo identifier.
             "context"      The caller's context data.
             "optionsinfo"  Information on all the other options.
 
@@ -570,6 +575,7 @@ $def DEFAULT_CAPTION "Edit the following data and click on 'Done' or 'Apply' to 
                 depth stackdepth !
                 {
                     "descr"       dscr @
+                    "opts_id"     opts_id @
                     "dlogid"      dlogid @
                     "context"     caller_ctx @
                     "optionsinfo" optionsinfo @
@@ -628,6 +634,7 @@ $def DEFAULT_CAPTION "Edit the following data and click on 'Done' or 'Apply' to 
                     depth stackdepth !
                     {
                         "descr"       dscr @
+                        "opts_id"     opts_id @
                         "dlogid"      dlogid @
                         "context"     caller_ctx @
                         "optionsinfo" optionsinfo @
@@ -669,6 +676,7 @@ $def DEFAULT_CAPTION "Edit the following data and click on 'Done' or 'Apply' to 
             depth stackdepth !
             {
                 "descr"       dscr @
+                "opts_id"     opts_id @
                 "dlogid"      dlogid @
                 "context"     caller_ctx @
                 "optionsinfo" optionsinfo @

@@ -80,6 +80,7 @@ $def ALLOW_CUSTOM_GENDERS 1 (change to 0 if custom genders not allowed )
 $include $lib/case
 $include $lib/lmgr
 $include $lib/match
+$include $lib/optionsinfo
 $include $lib/optionsgui
  
 $def yesprop? getpropstr 1 strcut pop "y" stringcmp not
@@ -252,14 +253,27 @@ $def yesprop? getpropstr 1 strcut pop "y" stringcmp not
  
  
 : name_vfy[ dict:extradata str:optname any:val -- str:errs ]
+    extradata @ "dlogid" [] var! dlogid
     extradata @ "context" [] var! context
     context @ "target" [] var! targ
+    extradata @ "opts_id" [] var! opts_id
     extradata @ "optionsinfo" [] var! optionsinfo
     optionsinfo @ "@name" [] "value" [] var! username
     targ @ player? if
         optionsinfo @ "@password" []
         dup not if pop 0 array_make_dict then
-        "value" [] dup not if pop "" then
+        "value" [] dup not if
+            dlogid @ if
+                pop ""
+            else
+                "Please enter your current password to verify namechange."
+                "bold,red,bg_black" textattr
+                me @ swap notify
+                pop read
+                opts_id @ "@password" "value" 4 pick
+                optionsinfo_set_indexed
+            then
+        then
         var! oldpass
     then
  
@@ -365,11 +379,30 @@ $def yesprop? getpropstr 1 strcut pop "y" stringcmp not
     context @ "target" [] var! targ
     0 try
         targ @ optname @ val @ if "yes" else "no" then setprop
-    catch pop
-        optname @ "Could not set %s property for unknown reasons." fmtstring
+    catch
+        optname @ "Could not set %s property: %s" fmtstring
         exit
     endcatch
     optname @ "%s property set." fmtstring .tell
+    ""
+;
+ 
+ 
+: mlev_save[ dict:extradata str:optname any:val -- str:errs ]
+    extradata @ "context" [] var! context
+    context @ "target" [] var! targ
+    0 try
+        targ @
+        val @ intostr
+        set
+    catch
+        val @
+        "Could not set Mucker/Priority level to %i: %s." fmtstring
+        exit
+    endcatch
+    val @
+    "Set Mucker/Priority level to %i."
+    fmtstring .tell
     ""
 ;
  
@@ -378,11 +411,14 @@ $def yesprop? getpropstr 1 strcut pop "y" stringcmp not
     extradata @ "context" [] var! context
     context @ "target" [] var! targ
     0 try
-        targ @ optname @ val @ if "%s" else "!%s" then fmtstring set
-    catch pop
+        targ @
+        optname @ 1 strcut pop
+        val @ not if "!" swap strcat then
+        set
+    catch
         optname @
         val @ if "set" else "reset" then
-        "Could not %s %s flag for unknown reasons." fmtstring
+        "Could not %s %s flag: %s" fmtstring
         exit
     endcatch
     val @ if "set" else "reset" then
@@ -400,7 +436,7 @@ $def yesprop? getpropstr 1 strcut pop "y" stringcmp not
 ( -------------------------------------------------------------------------- )
  
  
-: options_data[ dbref:obj -- arr:data ]
+: options_data[ ref:who dbref:obj -- arr:data ]
     {
         { (Name group)
             "group"  "Basics"
@@ -478,15 +514,6 @@ $def yesprop? getpropstr 1 strcut pop "y" stringcmp not
                 "help"   "If your character can fly, you should select this."
                 "save_cb" 'boolprop_save
                 "value"  obj @ FLIGHT_PROP yesprop?
-            }dict
-            {
-                "group"  "Basics"
-                "name"   "Jump_OK"
-                "type"   "boolean"
-                "label"  "Character can throw things"
-                "help"   "Select this to allow your character to throw, and receive thrown things."
-                "save_cb" 'flag_save
-                "value"  obj @ "jump_ok" flag?
             }dict
             {
                 "group"  "Basics"
@@ -814,123 +841,395 @@ $def yesprop? getpropstr 1 strcut pop "y" stringcmp not
             }dict
         then
  
-        ( Flags.  Commented out for now.
+        obj @ player?
+        obj @ thing? or not if
+            {
+                "group"  "Flags"
+                "grouplabel" "Flag settings [A to K]."
+                obj @ case
+                    program? when
+                        "name" "Autostart"
+                        "label" "Autostart: Program automatically runs at server start"
+                        "help" "When a program is set Autostart, and it is owned by a wizard, it will automatically be run at server startup time, or when the program is recompiled."
+                    end
+                    exit? when
+                        "name" "Abate"
+                        "label" "Abate: Exit matching priority is slightly lowered"
+                        "help" "An exit with the ABATE flag is a lower priority then one without the ABATE flag, making it lower then the M0 exit priority."
+                    end
+                    room? when
+                        "name" "Abode"
+                        "label" "Abode: Room allows other player to set their home to it"
+                        "help" "A room with the ABODE flag is available for other players to @link their home to."
+                    end
+                    ( WORK: figure out and add Thing case. )
+                endcase
+                "type"     "boolean"
+                "value"    obj @ "a" flag?
+                "save_cb"  'flag_save
+            }dict
+        then
+
+        obj @ exit?
+        obj @ thing? or not
+        obj @ player? not
+        who @ "w" flag? or and if
+            {
+                "group"  "Flags"
+                obj @ case
+                    program? when
+                        "name" "Bound"
+                        "label" "Bound: Program is forced to run in preempt mode"
+                        "help" "When a program is set Bound, it will automatically be run in preempt mode by default."
+                    end
+                    room? when
+                        "name" "Block"
+                        "label" "Block: Prevent player from using personal actions here"
+                        "help"  "A room with the Block flag prevents players in it from using personal actions to exit the room."
+                    end
+                    player? when
+                        "name" "Builder"
+                        "label" "Builder: Player can create rooms, exits and things"
+                        "help" "A player with the Builder flag can use @action, @open, @create and @dig to build."
+                    end
+                endcase
+                "type"     "boolean"
+                "value"    obj @ "b" flag?
+                "save_cb" 'flag_save
+            }dict
+        then
+
+        obj @ program? not if
+            {
+                "group"  "Flags"
+                obj @ case
+                    player? when
+                        "name" "Color"
+                        "label" "Color: Player wishes to see ANSI color codes"
+                        "help" "A player with the Color flag will allow ANSI color codes to be sent to them."
+                    end
+                    default pop
+                        "name" "Chown_OK"
+                        "label" "Chown_OK: Other players can @Chown this object to themselves"
+                        "help" "The Chown_OK flag allows other players to change the ownership of this object to themselves using the @chown command."
+                    end
+                endcase
+                "type"     "boolean"
+                "value"    obj @ "c" flag?
+                "save_cb" 'flag_save
+            }dict
+        then
+
+        obj @ player? not
+        who @ "w" flag? or if
+            {
+                "group"  "Flags"
+                obj @ case
+                    player? when
+                        "name" "Dark"
+                        "label" "Dark: Player is invisible and moves silently"
+                        "help" "A player with the Dark flag will not show up in the room contents or in the WHO list, and they suppress has arrived/has left message."
+                    end
+                    program? when
+                        "name" "Debug"
+                        "label" "Debug: MUF program runs with instruction tracing"
+                        "help" "The Debug flag on a program causes it to print out a trace of every instruction it executes, along with what data is on the stack."
+                    end
+                    exit? when
+                        "name" "Dark"
+                        "label" "Dark: Exit suppresses arrive/leave messages"
+                        "help" "An exit with the Dark flag will suppress the automatic has arrived/has left message."
+                    end
+                    room? when
+                        "name" "Dark"
+                        "label" "Dark: Room's contents are invisible"
+                        "help" "A room with the Dark flag will not show a contents list, and it will suppress the automatic has arrived/has left messages."
+                    end
+                    thing? when
+                        "name" "Dark"
+                        "label" "Dark: Thing is invisible"
+                        "help" "A Thing object with the Dark flag will not be publicly listed in the contents of the room, player, or container it is in."
+                    end
+                endcase
+                "type"     "boolean"
+                "value"    obj @ "d" flag?
+                "save_cb" 'flag_save
+            }dict
+        then
+
         {
             "group"  "Flags"
-            "grouplabel" "Flag settings [A to K]."
-            "name"   "flag_a"
-            "type"   "boolean"
-            "label"  "Abode"
-            "help"   "Sets the state of the abode flag."
-            "value"   me @ "a" flag?
+            obj @ case
+                player? when
+                    "name"  "Haven"
+                    "label" "Haven: Player won't accept pages"
+                    "help" "A player with the Haven flag will not receive pages attempts sent to them."
+                end
+                program? when
+                    "name" "HardUID"
+                    "label" "HardUID: Run program with permissions of trigger owner"
+                    "help" "The HardUID flag, in the absence of the SetUID flag, causes a program to run with the permissions of the trigger owner.  If the SetUID flag is also set, though, and the program is owned by a wizard, it will run with the permissions of the calling program."
+                end
+                thing? when
+                    "name" "Hide"
+                    "label" "Hide: Don't show container contents"
+                    "help" "The Hide flag prevents the contents of Things from being displayed."
+                end
+                exit? when
+                    "name" "Haven"
+                    "label" "Haven: Allow exit to match with arguments when not linked to program"
+                    "help" "The Haven flag allows exits to match user commands entered with trailing arguments, even if the exit isn't linked to a MUF program.  This lets you make pure MPI commands that accept {&arg}, without having to link to a $donothing program."
+                end
+                room? when
+                    "name" "Haven"
+                    "label" "Haven: Prevent players from being 'kill'ed here"
+                    "help" "The Haven flag allows exits to match user commands entered with trailing arguments, even if the exit isn't linked to a MUF program.  This lets you make pure MPI commands that accept {&arg}, without having to link to a $donothing program."
+                end
+            endcase
+            "type"     "boolean"
+            "value"    obj @ "h" flag?
+            "save_cb" 'flag_save
         }dict
+
+        obj @ exit?
+        obj @ program? or not if
+            {
+                "group"  "Flags"
+                obj @ case
+                    player? when
+                        "name"  "Jump_OK"
+                        "label" "Jump_OK: Player can throw/recieve things, and be moved"
+                        "help"  "Players with Jump_OK set will allow unprivileged MUF programs to move them to another room, using the MOVETO primitive.  It will also allow throwable things to be thrown into or out of their inventory."
+                    end
+                    thing? when
+                        "name"  "Jump_OK"
+                        "label" "Jump_OK: Thing can be thrown"
+                        "help"  "Select this to allow this Thing to be thrown."
+                    end
+                    room? when
+                        "name"  "Jump_OK"
+                        "label" "Jump_OK: Allow unprivileged MUF programs to move players/things here"
+                        "help"  "Rooms with Jump_OK set will allow unprivileged MUF programs to move players and things into or out of it, using the MOVETO primitive."
+                    end
+                endcase
+                "type"     "boolean"
+                "value"    obj @ "j" flag?
+                "save_cb" 'flag_save
+            }dict
+        then
+
+        obj @ player? if
+            {
+                "group"  "Flags"
+                obj @ case
+                    player? when
+                        "name"  "Kill_OK"
+                        "label" "Kill_OK: Player allows others to 'kill' them"
+                        "help"  "Players with Kill_OK set will allow other players to use the kill command on them successfully.  Bith the killer and killee must be set Kill_OK, and the room must not be set Haven."
+                    end
+                endcase
+                "type"     "boolean"
+                "value"    obj @ "k" flag?
+                "save_cb" 'flag_save
+            }dict
+        then
+
+
         {
-            "group"  "Flags"
-            "name"   "flag_b"
-            "type"   "boolean"
-            "label"  "Builder"
-            "help"   "Sets the state of the builder flag."
-            "value"   me @ "b" flag?
-        }dict
-        {
-            "group"  "Flags"
-            "name"   "flag_c"
-            "type"   "boolean"
-            "label"  "Chown_ok"
-            "help"   "Sets the state of the Chown_ok flag."
-            "value"   me @ "c" flag?
-        }dict
-        {
-            "group"  "Flags"
-            "name"   "flag_d"
-            "type"   "boolean"
-            "label"  "Dark"
-            "help"   "Sets the state of the Dark flag."
-            "value"   me @ "d" flag?
-        }dict
-        {
-            "group"  "Flags"
-            "name"   "flag_h"
-            "type"   "boolean"
-            "label"  "Haven"
-            "help"   "Sets the state of the Haven flag."
-            "value"   me @ "h" flag?
-        }dict
-        {
-            "group"  "Flags"
-            "name"   "flag_j"
-            "type"   "boolean"
-            "label"  "Jump_ok"
-            "help"   "Sets the state of the Jump_ok flag."
-            "value"   me @ "j" flag?
-        }dict
-        {
-            "group"  "Flags"
-            "name"   "flag_k"
-            "type"   "boolean"
-            "label"  "Kill_ok"
-            "help"   "Sets the state of the Kill_ok flag."
-            "value"   me @ "k" flag?
-        }dict
-        {
-            "group"  "More Flags"
+            "group"   "More Flags"
             "grouplabel" "More flag settings [L to Z]."
-            "name"   "flag_l"
-            "type"   "boolean"
-            "label"  "Link_ok"
-            "help"   "Sets the state of the Link_ok flag."
-            "value"   me @ "l" flag?
+            "name"    "Link_OK"
+            "label"   "Link_OK: allows others to @link exits to this"
+            "help"    "Objects with the Link_OK flag set allow other players to @link an exit to them."
+            "type"    "boolean"
+            "value"    obj @ "l" flag?
+            "save_cb" 'flag_save
         }dict
+
+        {
+            "group"   "More Flags"
+            "name"    "Quell"
+            "label"   "Quell: Temporarily nullify Wizard flag"
+            "help"    "Objects with the Wizard flag can use the Quell flag to temporarily disable the effects of their Wizard flag.  The Quell flag has no meaning when the Wizard flag is not set."
+            "type"    "boolean"
+            "value"   obj @ "q" flag?
+            "save_cb" 'flag_save
+        }dict
+
+        obj @ exit? if
+            obj @ location thing?
+        else
+            1
+        then
+        if
+            {
+                "group"  "More Flags"
+                obj @ case
+                    room? when
+                        "name"  "Sticky"
+                        "label" "Sticky: Send contents to drop-to when last player leaves"
+                        "help"  "Rooms with a drop-to set and the Sticky flag will send their contents to the drop-to destination when the last player leaves the room."
+                    end
+                    exit? when
+                        "name"  "Sticky"
+                        "label" "Sticky: When exit is triggered, don't send Thing home"
+                        "help"  "Exits on Thing objects will normally send that Thing home when they are triggered.  The Sticky flag prevents that."
+                    end
+                    player? when
+                        "name"  "Silent"
+                        "label" "Silent: Player doesn't wish to see object dbrefs"
+                        "help"  "Players with the Silent flag set will not be shown dbrefs on object they control."
+                    end
+                    thing? when
+                        "name"  "Sticky"
+                        "label" "Sticky: Send Thing home when dropped"
+                        "help"  "Thing objects with the Sticky flag will be send home when they are dropped."
+                    end
+                    program? when
+                        "name"  "SetUID"
+                        "label" "SetUID: Run program with program owner's permissions"
+                        "help"  "Programs with the SetUID flag (and no HardUID flag) will be run with the permissions of owner of the program.  If SetUID is used in conjunction with HardUID, and the program is owned by a Wizard, then the program will be run with the permissions of the calling program. (This is useful for libraries.)"
+                    end
+                endcase
+                "type"     "boolean"
+                "value"    obj @ "s" flag?
+                "save_cb" 'flag_save
+            }dict
+        then
+
         {
             "group"  "More Flags"
-            "name"   "flag_q"
-            "type"   "boolean"
-            "label"  "Quell"
-            "help"   "Sets the state of the Quell flag."
-            "value"   me @ "q" flag?
+            obj @ case
+                room? when
+                    "name"  "Vehicle"
+                    "label" "Vehicle: Prevent vehicles from entering this room"
+                    "help"  "Rooms with the Vehicle flag will not allow Vehicle things to move into them."
+                end
+                exit? when
+                    "name"  "Vehicle"
+                    "label" "Vehicle: Prevent vehicles from using this exit"
+                    "help"  "Exits with the Vehicle flag will not allow Vehicle things to move through them."
+                end
+                player? when
+                    "name"  "Vehicle"
+                    "label" "Vehicle: Player is disallowed from setting Vehicle flag"
+                    "help"  "Players with the Vehicle flag are not allowed to set Vehicle flags on Things."
+                end
+                thing? when
+                    "name"  "Vehicle"
+                    "label" "Vehicle: Thing is a Vehicle that can be entered by players"
+                    "help"  "Thing objects with the Vehicle flag can be entered by players.  To enter a vehicle, you can either use a MUF program to teleport you to it via MOVETO, you can get a wizard to @teleport you into it, or else you an use an action that is both attached and linked to the vehicle to enter it.  This means that you can only enter a vehicle from the same room that it is in, and you cannot use far links to enter it.  This prevents the use of vehicles to get around locks.  Inside the vehicle, you will see it's @idesc, instead of it's @desc, and you will not be shown it's @succ or @fail.  Objects dropped in a vehicle will not go away to the their homes, as a vehicle cannot have a dropto set in it."
+                end
+                program? when
+                    "name"  "Viewable"
+                    "label" "Viewable: Allow program to be @list-ed by anyone"
+                    "help"  "Programs with the Viewable flag will allow anyone to @list them."
+                end
+            endcase
+            "type"     "boolean"
+            "value"    obj @ "v" flag?
+            "save_cb" 'flag_save
         }dict
-        {
-            "group"  "More Flags"
-            "name"   "flag_s"
-            "type"   "boolean"
-            "label"  "Sticky"
-            "help"   "Sets the state of the Sticky flag."
-            "value"   me @ "s" flag?
-        }dict
-        {
-            "group"  "More Flags"
-            "name"   "flag_v"
-            "type"   "boolean"
-            "label"  "Vehicle"
-            "help"   "Sets the state of the Vehicle flag."
-            "value"   me @ "v" flag?
-        }dict
-        {
-            "group"  "More Flags"
-            "name"   "flag_w"
-            "type"   "boolean"
-            "label"  "Wizard"
-            "help"   "Sets the state of the Wizard flag."
-            "value"   me @ "w" flag?
-        }dict
-        {
-            "group"  "More Flags"
-            "name"   "flag_x"
-            "type"   "boolean"
-            "label"  "Xforcible"
-            "help"   "Sets the state of the Xforcible flag."
-            "value"   me @ "x" flag?
-        }dict
-        {
-            "group"  "More Flags"
-            "name"   "flag_z"
-            "type"   "boolean"
-            "label"  "Zombie"
-            "help"   "Sets the state of the Zombie flag."
-            "value"   me @ "z" flag?
-        }dict
-        )
- 
+
+        obj @ player? if
+            who @ "w" flag?
+        else
+            obj @ thing?
+            obj @ exit? or not
+        then
+        if
+            {
+                "group"  "More Flags"
+                obj @ case
+                    room? when
+                        "name"  "Wizard"
+                        "label" "Wizard: Room is root of Realm environment"
+                        "help"  "Rooms with the Wizard flag are the root environment rooms for Realms.  Realms are areas of the Muck where an otherwise non-wizard player can have nearly wizardly control to alter or move objects.  The owner of a Wizard flagged room is the Realm controller."
+                    end
+                    player? when
+                        "name"  "Wizard"
+                        "label" "Wizard: Player is a Wizard, with elevated privileges"
+                        "help"  "Players with the Wizard flag "
+                    end
+                    program? when
+                        "name"  "Wizard"
+                        "label" "Wizard: Run program with elevated Wizard permissions"
+                        "help"  "Programs with the Wizard flag run with elevated Wizardly permissions, allowing them to do pretty much anything allowed in MUF."
+                    end
+                endcase
+                "type"     "boolean"
+                "value"    obj @ "w" flag?
+                "save_cb" 'flag_save
+            }dict
+        then
+
+        obj @ thing?
+        obj @ player? or
+        obj @ exit?
+        who @ "w" flag? and
+        or if
+            {
+                "group"  "More Flags"
+                obj @ case
+                    exit? when
+                        "name"  "Xpress"
+                        "label" "Xpress: Exit can take args without delimiting space"
+                        "help"  "Exits with the Xpress flag can be invoked without having to have a space between the exit name and the arguments.  (ie: using '+foo' to run the exit named '+' with the argument 'foo')"
+                    end
+                    player? when
+                        "name"  "XForcible"
+                        "label" "XForcible: Player can be @forced by those who pass its @flock"
+                        "help"  "Players with the XForcible flag can be @forced by other players who pass a test against the @flock force-lock."
+                    end
+                    thing? when
+                        "name"  "XForcible"
+                        "label" "XForcible: Thing can be @forced by those who pass its @flock"
+                        "help"  "Thing objects with the XForcible flag can be @forced by players who pass a test against the @flock force-lock."
+                    end
+                endcase
+                "type"     "boolean"
+                "value"    obj @ "x" flag?
+                "save_cb" 'flag_save
+            }dict
+        then
+
+
+        obj @ player? not
+        who @ "w" flag? or if
+            {
+                "group"  "More Flags"
+                obj @ case
+                    room? when
+                        "name"  "Zombie"
+                        "label" "Zombie: Prevent vehicles from entering this room"
+                        "help"  "Rooms with the Zombie flag will not allow Zombie things to move into them."
+                    end
+                    exit? when
+                        "name"  "Zombie"
+                        "label" "Zombie: Prevent vehicles from using this exit"
+                        "help"  "Exits with the Zombie flag will not allow Zombie things to move through them."
+                    end
+                    player? when
+                        "name"  "Zombie"
+                        "label" "Zombie: Player is disallowed from setting Zombie flag"
+                        "help"  "Players with the Zombie flag are not allowed to set Zombie flags on Things."
+                    end
+                    thing? when
+                        "name"  "Zombie"
+                        "label" "Zombie: Thing is a Zombie that echoes what it hears to it's owner"
+                        "help"  "Thing objects with the Zombie flag can be entered by players.  To enter a vehicle, you can either use a MUF program to teleport you to it via MOVETO, you can get a wizard to @teleport you into it, or else you an use an action that is both attached and linked to the vehicle to enter it.  This means that you can only enter a vehicle from the same room that it is in, and you cannot use far links to enter it.  This prevents the use of vehicles to get around locks.  Inside the vehicle, you will see it's @idesc, instead of it's @desc, and you will not be shown it's @succ or @fail.  Objects dropped in a vehicle will not go away to the their homes, as a vehicle cannot have a dropto set in it."
+                    end
+                    program? when
+                        "name"  "Zombie"
+                        "label" "Zombie: Run program in the MUF debugger"
+                        "help"  "Programs with the Zombie flag will run in the MUF debugger when triggered by their owner or a wizard."
+                    end
+                endcase
+                "type"     "boolean"
+                "value"    obj @ "z" flag?
+                "save_cb" 'flag_save
+            }dict
+        then
     }list
 ;
  
@@ -951,7 +1250,7 @@ $def yesprop? getpropstr 1 strcut pop "y" stringcmp not
  
     descr context @ 'saveall
     targ @ dup "Object Editor: %D(%d)" fmtstring
-    targ @ options_data
+    me @ targ @ options_data
     GUI_OPTIONS_PROCESS
 ;
 .

@@ -9,10 +9,12 @@
 (                                                                    )
 ( v1.000 -- 10/18/2002 -- Revar <revar@belfry.com>                   )
 (     Initial revision.                                              )
+( v1.001 --  8/18/2003 -- Revar <revar@belfry.com>                   )
+(     Added opts_id to callback data.                                )
 
 $author Revar Desmera <revar@belfry.com>
-$version 1.000
-$lib-version 1.000
+$version 1.001
+$lib-version 1.001
 $note Released under the LGPL.
 
 (
@@ -181,6 +183,7 @@ $note Released under the LGPL.
 
         The extradata dictionary contains the following extra data:
             "user"         The user the menu was displayed to.
+            "opts_id"      The optionsinfo identifier.
             "context"      The caller's context data.
             "optionsinfo"  Information on all the other options.
 
@@ -488,6 +491,7 @@ lvar main_title
     vfy_fn @ address? if
         depth stackdepth !
         {
+            "opts_id"     opts_id @
             "context"     caller_ctx @
             "optionsinfo" optionsinfo @
         }dict
@@ -528,6 +532,7 @@ lvar main_title
             itemsave_fn @ address? if
                 depth stackdepth !
                 {
+                    "opts_id"     opts_id @
                     "context"     caller_ctx @
                     "optionsinfo" optionsinfo @
                 }dict
@@ -566,6 +571,7 @@ lvar main_title
         save_fn @ address? if
             depth stackdepth !
             {
+                "opts_id"     opts_id @
                 "context"     caller_ctx @
                 "optionsinfo" optionsinfo @
             }dict
