@@ -1,29 +1,29 @@
 @prog cmd-@archive
 1 99999 d
 1 i
-( @const object=aefi           )
-( @dig roomname=parent=regname )
-( @act exitname=source=regname )
-( @cre thingname=value=regname )
-( @reg object=regname          )
-  
+$def PROGNAME  "@archive"
+$def VERSION   "6.000"
+$def COPYRIGHT "Copyright 3/7/2000 by Revar"
+
 $include $lib/strings
 $include $lib/match
 $include $lib/edit
   
 : show-help
-"Syntax: @archive <object>[=1acefil]"
-" @archive <object>=1    Archive only that object."
-" @archive <object>=a    Archive all, regardless of owner.  (wizards only)."
-" @archive <object>=c    Don't archive contents."
-" @archive <object>=e    Archive objects not in this room's environment."
-" @archive <object>=f    Don't archive floater child rooms unless linked to."
-" @archive <object>=i    Archive, including even globally registered objects."
-" @archive <object>=l    Don't follow links or droptos in archiving."
-" @archive <object>=p    Don't archive programs at all."
-"NOTE: Turn off your client's wordwrap before logging an @archive output."
-"Also, remove the 'X lines displayed.' line listed at the end of programs."
-11 EDITdisplay
+{
+  COPYRIGHT VERSION PROGNAME "%s v%s %s" fmtstring
+  "Syntax: @archive <object>[=1acefil]"
+  " @archive <object>=1    Archive only that object."
+  " @archive <object>=a    Archive all, regardless of owner.  (wizards only)."
+  " @archive <object>=c    Don't archive contents."
+  " @archive <object>=e    Archive objects not in this room's environment."
+  " @archive <object>=f    Don't archive floater child rooms unless linked to."
+  " @archive <object>=i    Archive, including even globally registered objects."
+  " @archive <object>=l    Don't follow links or droptos in archiving."
+  " @archive <object>=p    Don't archive programs at all."
+  "NOTE: Turn off your client's wordwrap before logging an @archive output."
+  "Also, remove the 'X lines displayed.' line listed at the end of programs."
+} EDITdisplay
 ;
   
 lvar originalobj
@@ -195,13 +195,20 @@ lvar progcnt
           "=dbref:" strcat 3 pick strcat
           ":" strcat swap strcat
           me @ swap notify
-        else (not a dbref.  Must be a lock.  Fun fun parse time.)
-          (refname object propname propval -- )
-          unparselock translate-lockstr
-          "@propset " 5 pick strcat
-          "=lock:" strcat 3 pick strcat
-          ":" strcat swap strcat
-          me @ swap notify
+		else
+          dup float? if (A floating point number!  Joy!)
+            ftostr
+            "@propset " 5 pick strcat
+            "=float:" strcat 3 pick strcat
+            ":" strcat swap strcat me @ swap notify
+          else (not a dbref.  Must be a lock.  Fun fun parse time.)
+            (refname object propname propval -- )
+            unparselock translate-lockstr
+            "@propset " 5 pick strcat
+            "=lock:" strcat 3 pick strcat
+            ":" strcat swap strcat
+            me @ swap notify
+          then (float?)
         then (dbref?)
       then (int?)
     then (string?)
