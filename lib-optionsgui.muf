@@ -1,7 +1,7 @@
 @prog lib-optionsgui
 1 99999 d
 1 i
-( $lib/optionsgui  Copyright 7/23/2002 by Revar <revar@belfry.com> )
+( $lib/optionsgui  Copyright 7/22/2002 by Revar <revar@belfry.com> )
 ( Released under the GNU LGPL.                                     )
 (                                                                  )
 ( A MUF library to automatically create dialogs to edit a set of   )
@@ -15,9 +15,13 @@
 (     Majorly reworked interface.  Many bugfixes.                  )
 ( v1.101 --  8/13/2002 -- Revar <revar@belfry.com>                 )
 (     Bigfix for the help dialogs sent to other descriptors.       )
+( v1.102 --  8/20/2002 -- Revar <revar@belfry.com>                 )
+(     Made dbref options use combobox.                             )
+( v1.103 --  8/29/2002 -- Revar <revar@belfry.com>                 )
+(     Made dbref options update combobox with matched object name. )
   
 $author Revar Desmera <revar@belfry.com>
-$version 1.101
+$version 1.103
 $lib-version 1.101
 $note Released under the LGPL.
   
@@ -324,29 +328,44 @@ $def DEFAULT_CAPTION "Edit the following data and click on 'Done' or 'Apply' to 
 ;
  
  
-: objtype_check[ ref:obj str:label list:validtypes -- str:errs ]
+: objtype_normalize[ validtypes -- list:validtyes ]
     validtypes @
     dup not if
         pop "any"
-        dup validtypes !
     then
     dup string? if
         { swap }list
     then
     dup "any" array_matchval if
-        pop { "room" "thing" "exit" "player" "program" "garbage" "bad" }list
+        { "room" "thing" "exit" "player" "program" "garbage" "bad" }list array_union
+    then
+    dup "room" array_matchval if
+        "abode"  swap array_appenditem
     then
     dup "thing" array_matchval if
         "zombie"  swap array_appenditem
         "vehicle" swap array_appenditem
     then
+;
+ 
+ 
+: objtype_check[ int:dscr ref:obj dict:item -- str:errs ]
+    dscr @ descrdbref var! who
+    item @ "label" [] var! label
+    item @ "objtype" [] objtype_normalize dup var! validtypes
     obj @ case
-        ok? not  when "bad"     array_matchval end
-        room?    when "room"    array_matchval end
-        exit?    when "exit"    array_matchval end
-        player?  when "player"  array_matchval end
-        program? when "program" array_matchval end
-        thing?   when
+        #-3 dbcmp when "home"    array_matchval end
+        ok? not   when "bad"     array_matchval end
+        exit?     when "exit"    array_matchval end
+        player?   when "player"  array_matchval end
+        program?  when "program" array_matchval end
+        room?     when
+            0
+            obj @ "a" flag? if over "abode" array_matchval or then
+            over "room" array_matchval or
+            swap pop
+        end
+        thing?    when
             0
             obj @ "z" flag? if over "zombie"  array_matchval or then
             obj @ "v" flag? if over "vehicle" array_matchval or then
@@ -363,7 +382,140 @@ $def DEFAULT_CAPTION "Edit the following data and click on 'Done' or 'Apply' to 
         } reverse fmtstring
         exit
     then
+    obj @ ok? if
+        item @ "linkable" [] if
+            who @ obj @ controls not
+            obj @ "L" flag? not and
+            obj @ "A" flag? obj @ room? and not and
+            if
+                {
+                    "'%s' must be an object you can link to."
+                    label @
+                } reverse fmtstring
+                exit
+            then
+        then
+        item @ "control" [] if
+            obj @ who @ controls not if
+                {
+                    "'%s' must be an object you control."
+                    label @
+                } reverse fmtstring
+                exit
+            then
+        then
+    then
     ""
+;
+ 
+ 
+: dbref_option_list[ int:dscr list:item -- list:objstrs ]
+    dscr @ descrdbref var! who
+    { }list var! out
+ 
+    ( Me, Here, and Home )
+    dscr @ who @ item @ objtype_check not if
+        "Me" out @ array_appenditem out !
+    then
+    dscr @ who @ location item @ objtype_check not if
+        "Here" out @ array_appenditem out !
+    then
+    dscr @ #-3 item @ objtype_check not if
+        "Home (#-3)" out @ array_appenditem out !
+    then
+ 
+    ( Player's inventory )
+    who @ contents_array
+    foreach swap pop
+        dscr @ over item @ objtype_check not if
+            unparseobj out @ array_appenditem out !
+        else pop
+        then
+    repeat
+ 
+    ( Room contents )
+    who @ location contents_array
+    foreach swap pop
+        dscr @ over item @ objtype_check not if
+            unparseobj out @ array_appenditem out !
+        else pop
+        then
+    repeat
+ 
+    ( Environment rooms )
+    who @ location location
+    begin
+        dup while
+        dscr @ over item @ objtype_check not if
+            dup unparseobj out @ array_appenditem out !
+        then
+        location
+    repeat pop
+ 
+    ( Player exits )
+    who @ exits_array
+    foreach swap pop
+        dscr @ over item @ objtype_check not if
+            unparseobj out @ array_appenditem out !
+        else pop
+        then
+    repeat
+ 
+    ( Room exits )
+    who @ location exits_array
+    foreach swap pop
+        dscr @ over item @ objtype_check not if
+            unparseobj out @ array_appenditem out !
+        else pop
+        then
+    repeat
+ 
+    out @
+;
+ 
+ 
+: dbref_unparse[ int:dscr ref:obj -- str:objstr ]
+    dscr @ descrdbref var! who
+    obj @ ok? if
+        obj @ player? if
+            obj @ who @ dbcmp if
+                "Me" exit
+            else
+                "*" obj @ name strcat exit
+            then
+        then
+        obj @ who @ location dbcmp if
+            "Here" exit
+        then
+        dscr @ descrdbref obj @ controls if
+            obj @ unparseobj exit
+        then
+        obj @ name exit
+    then
+    obj @ #-3 dbcmp if
+        "Home (#-3)" exit
+    then
+    obj @ int "#%i" fmtstring
+;
+ 
+ 
+: dbref_parse[ str:objstr int:dscr -- ref:obj ]
+    dscr @ descrdbref var! who
+    objstr @ "me" stringcmp not if who @ exit then
+    objstr @ "here" stringcmp not if who @ location exit then
+    objstr @ not if #-1 exit then
+    objstr @ match
+    dup int 0 >= if exit then
+    dup #-2 dbcmp if exit then
+    pop
+    objstr @ "*(#[0-9]*)" smatch if
+        objstr @ "(#" rsplit swap pop ")" rsplit pop
+        dup 1 strcut pop number? if
+            atoi dbref exit
+        else pop
+        then
+    then
+    #-1
 ;
  
  
@@ -530,12 +682,12 @@ lvar opts_info_topnum
                     timespan2str
                 then
                 item @ "type" [] "dbref" stringcmp not if
-                    unparseobj
+                    dscr @ swap dbref_unparse
                 then
                 item @ "type" [] "dbreflist" stringcmp not if
                     { }list var! reflistset
                     foreach swap pop
-                        unparseobj
+                        dscr @ swap dbref_unparse
                         reflistset @ array_appenditem reflistset !
                     repeat
                     reflistset @ "\r" array_join
@@ -620,148 +772,158 @@ lvar opts_info_topnum
     vals @ "ctrl_cnt" [] 0 [] atoi
     0 swap -- 1 for var! cnt
         0 minmaxchk !
-        vals @ cnt @ "name_%03i" fmtstring [] 0 [] var! ctrlname
-        optionsinfo @ ctrlname @ [] var! iteminfo
-        iteminfo @ "type" [] var! ctrltype
-        iteminfo @ "label" [] var! ctrllbl
-        ctrltype @ case
-            "password" stringcmp not when
-                vals @ cnt @ "value_%03i" fmtstring [] 0 [] ctrlval !
-            end
-            "string" stringcmp not when
-                vals @ cnt @ "value_%03i" fmtstring [] 0 [] ctrlval !
-            end
-            "multistring" stringcmp not when
-                vals @ cnt @ "value_%03i" fmtstring [] ctrlval !
-            end
-            "timespan" stringcmp not when
-                vals @ cnt @ "value_days_%03i" fmtstring [] 0 [] atoi 24 *
-                vals @ cnt @ "value_hrs_%03i"  fmtstring [] 0 [] atoi + 60 *
-                vals @ cnt @ "value_mins_%03i" fmtstring [] 0 [] atoi + 60 *
-                vals @ cnt @ "value_secs_%03i" fmtstring [] 0 [] atoi +
-                ctrlval !
-                1 minmaxchk !
-            end
-            "integer" stringcmp not when
-                vals @ cnt @ "value_%03i" fmtstring [] 0 [] atoi ctrlval !
-                1 minmaxchk !
-            end
-            "float" stringcmp not when
-                vals @ cnt @ "value_%03i" fmtstring [] 0 [] strtof ctrlval !
-                1 minmaxchk !
-            end
-            "option" stringcmp not when
-                vals @ cnt @ "value_%03i" fmtstring [] 0 [] ctrlval !
-                iteminfo @ "editable" [] not if
-                    iteminfo @ "options" []
-                    ctrlval @ array_findval not if
+        vals @ cnt @ "name_%03i" fmtstring []
+        dup if
+            0 [] var! ctrlname
+            optionsinfo @ ctrlname @ [] var! iteminfo
+            iteminfo @ "type" [] var! ctrltype
+            iteminfo @ "label" [] var! ctrllbl
+            ctrltype @ case
+                "password" stringcmp not when
+                    vals @ cnt @ "value_%03i" fmtstring [] 0 [] ctrlval !
+                end
+                "string" stringcmp not when
+                    vals @ cnt @ "value_%03i" fmtstring [] 0 [] ctrlval !
+                end
+                "multistring" stringcmp not when
+                    vals @ cnt @ "value_%03i" fmtstring [] ctrlval !
+                end
+                "timespan" stringcmp not when
+                    vals @ cnt @ "value_days_%03i" fmtstring [] 0 [] atoi 24 *
+                    vals @ cnt @ "value_hrs_%03i"  fmtstring [] 0 [] atoi + 60 *
+                    vals @ cnt @ "value_mins_%03i" fmtstring [] 0 [] atoi + 60 *
+                    vals @ cnt @ "value_secs_%03i" fmtstring [] 0 [] atoi +
+                    ctrlval !
+                    1 minmaxchk !
+                end
+                "integer" stringcmp not when
+                    vals @ cnt @ "value_%03i" fmtstring [] 0 [] atoi ctrlval !
+                    1 minmaxchk !
+                end
+                "float" stringcmp not when
+                    vals @ cnt @ "value_%03i" fmtstring [] 0 [] strtof ctrlval !
+                    1 minmaxchk !
+                end
+                "option" stringcmp not when
+                    vals @ cnt @ "value_%03i" fmtstring [] 0 [] ctrlval !
+                    iteminfo @ "editable" [] not if
+                        iteminfo @ "options" []
+                        ctrlval @ array_findval not if
+                            {
+                                errs @ dup not if pop then
+                                ctrllbl @ "Value for '%s' is invalid." fmtstring
+                            }list "\r" array_join
+                            errs !
+                        then
+                    then
+                end
+                "dbref" stringcmp not when
+                    vals @ cnt @ "value_%03i" fmtstring [] 0 []
+                    dscr @ dbref_parse ctrlval !
+                    dscr @ ctrlval @ iteminfo @
+                    objtype_check
+                    dup if errs ! else pop then
+                    1 minmaxchk !
+                end
+                "dbreflist" stringcmp not when
+                    { }list ctrlval !
+                    vals @ cnt @ "value_%03i" fmtstring [] 0 []
+                    ";" explode_array
+                    foreach swap pop
+                        strip dscr @ dbref_parse
+                        dscr @ over iteminfo @
+                        objtype_check
+                        dup if errs ! pop break else pop then
+                        ctrlval @ array_appenditem ctrlval !
+                    repeat
+                end
+                "boolean" stringcmp not when
+                    vals @ cnt @ "value_%03i" fmtstring [] 0 [] atoi
+                    if 1 else 0 then ctrlval !
+                end
+                default
+                    ctrlname @ ctrltype @ "Invalid control type '%s' for '%s'!" fmtstring abort
+                end
+            endcase
+    
+            ( check min/max constraints. )
+            minmaxchk @ if
+                ctrlval @ iteminfo @ "minval" [] < if
+                    {
+                        errs @ dup not if pop then
+                        ctrllbl @ "Value for '%s' is too low." fmtstring
+                    }list "\r" array_join
+                    errs !
+                else
+                    ctrlval @
+                    iteminfo @ "maxval" []
+                    dup not if pop 99999999 then
+                    > if
                         {
                             errs @ dup not if pop then
-                            ctrllbl @ "Value for '%s' is invalid." fmtstring
+                            ctrllbl @ "Value for '%s' is too high." fmtstring
                         }list "\r" array_join
                         errs !
                     then
                 then
-            end
-            "dbref" stringcmp not when
-                vals @ cnt @ "value_%03i" fmtstring [] 0 []
-                match ctrlval !
-                ctrlval @
-                iteminfo @ "label" []
-                iteminfo @ "objtype" []
-                objtype_check
-                dup if errs ! else pop then
-                1 minmaxchk !
-            end
-            "dbreflist" stringcmp not when
-                { }list ctrlval !
-                vals @ cnt @ "value_%03i" fmtstring [] 0 []
-                ";" explode_array
-                foreach swap pop
-                    strip match
-                    dup
-                    iteminfo @ "label" []
-                    iteminfo @ "objtype" []
-                    objtype_check
-                    dup if errs ! pop break else pop then
-                    ctrlval @ array_appenditem ctrlval !
-                repeat
-            end
-            "boolean" stringcmp not when
-                vals @ cnt @ "value_%03i" fmtstring [] 0 [] atoi
-                if 1 else 0 then ctrlval !
-            end
-            default
-                ctrlname @ ctrltype @ "Invalid control type '%s' for '%s'!" fmtstring abort
-            end
-        endcase
-  
-        ( check min/max constraints. )
-        minmaxchk @ if
-            ctrlval @ iteminfo @ "minval" [] < if
-                {
-                    errs @ dup not if pop then
-                    ctrllbl @ "Value for '%s' is too low." fmtstring
-                }list "\r" array_join
-                errs !
-            else
-                ctrlval @
-                iteminfo @ "maxval" []
-                dup not if pop 99999999 then
-                > if
-                    {
-                        errs @ dup not if pop then
-                        ctrllbl @ "Value for '%s' is too high." fmtstring
-                    }list "\r" array_join
-                    errs !
-                then
             then
-        then
-  
-        iteminfo @ "value" [] var! oldctrlval
-        oldctrlval @ iteminfo @ "oldvalue" ->[] iteminfo !
-        ctrlval    @ iteminfo @ "value"    ->[] iteminfo !
-  
-        oldctrlval @ ctrlval @ equalvals? if 0 else 1 then
-        iteminfo @ "changed" ->[] iteminfo !
- 
-        iteminfo @ optionsinfo @ ctrlname @ ->[] optionsinfo !
- 
-        ( check verification callback function. )
-        iteminfo @ "vfy_cb" [] var! vfy_fn
-        vfy_fn @ address? if
-            depth stackdepth !
-            {
-                "descr"       dscr @
-                "dlogid"      dlogid @
-                "context"     caller_ctx @
-                "optionsinfo" optionsinfo @
-            }dict
-            ctrlname @
-            iteminfo @ "value" []
-            vfy_fn @ execute
-            depth stackdepth dup ++ @ = not if
-                depth stackdepth @ > if
-                    ctrlname @
-                    "Verify callback for '%s' returned extra garbage on the stack."
-                else
+    
+            iteminfo @ "value" [] var! oldctrlval
+            oldctrlval @ iteminfo @ "oldvalue" ->[] iteminfo !
+            ctrlval    @ iteminfo @ "value"    ->[] iteminfo !
+    
+            oldctrlval @ ctrlval @ equalvals? if 0 else 1 then
+            iteminfo @ "changed" ->[] iteminfo !
+    
+            iteminfo @ optionsinfo @ ctrlname @ ->[] optionsinfo !
+    
+            ( check verification callback function. )
+            iteminfo @ "vfy_cb" [] var! vfy_fn
+            vfy_fn @ address? if
+                depth stackdepth !
+                {
+                    "descr"       dscr @
+                    "dlogid"      dlogid @
+                    "context"     caller_ctx @
+                    "optionsinfo" optionsinfo @
+                }dict
+                ctrlname @
+                iteminfo @ "value" []
+                vfy_fn @ execute
+                depth stackdepth dup ++ @ = not if
+                    depth stackdepth @ > if
+                        ctrlname @
+                        "Verify callback for '%s' returned extra garbage on the stack."
+                    else
+                        ctrlname @
+                        "Verify callback for '%s' was supposed to return a string."
+                    then
+                    fmtstring abort
+                then
+                dup string? not if
                     ctrlname @
                     "Verify callback for '%s' was supposed to return a string."
+                    fmtstring abort
                 then
-                fmtstring abort
+                dup if
+                    (If we have an error, don't bother continuing. )
+                    errs ! break
+                else pop
+                then
             then
-            dup string? not if
-                ctrlname @
-                "Verify callback for '%s' was supposed to return a string."
-                fmtstring abort
+            errs @ if break then
+            ctrltype @ "dbref" stringcmp not if
+                dlogid @ cnt @ "value_%03i" fmtstring
+                dscr @ iteminfo @ "value" [] dbref_unparse
+                GUI_VALUE_SET
+                (
+                dlogid @ cnt @ "value_%03i" fmtstring
+                "cursor" { "position" "end" }dict
+                GUI_CTRL_COMMAND
+                )
             then
-            dup if
-                (If we have an error, don't bother continuing. )
-                errs ! break
-            else pop
-            then
+        else pop
         then
-        errs @ if break then
     repeat
   
     errs @ if
@@ -1045,8 +1207,10 @@ lvar opts_info_topnum
                             "newline" 0
                             "sticky" "w"
                         }CTRL
-                        {EDIT cnt @ "value_%03i" fmtstring
-                            "value"  item @ "value" []
+                        {COMBOBOX cnt @ "value_%03i" fmtstring
+                            "value"   dscr @ item @ "value" [] dbref_unparse
+                            "options" dscr @ item @ dbref_option_list
+                            "editable" 1
                             "sticky" "w"
                             "width"  30
                             "hweight" 100
@@ -1060,8 +1224,16 @@ lvar opts_info_topnum
                             "newline" 0
                             "sticky" "w"
                         }CTRL
-                        {EDIT cnt @ "value_%03i" fmtstring
+                        {COMBOBOX cnt @ "value_%03i" fmtstring
                             "value"  item @ "value" []
+                                { }list var! reflistset
+                                foreach swap pop
+                                    dscr @ swap dbref_unparse
+                                    reflistset @ array_appenditem reflistset !
+                                repeat
+                                reflistset @ ";" array_join
+                            "options" dscr @ item @ dbref_option_list
+                            "editable" 1
                             "sticky" "w"
                             "width"  30
                             "hweight" 100
@@ -1508,4 +1680,5 @@ q
 @set $tmp/prog1=L
 @set $tmp/prog1=V
 @set $tmp/prog1=3
+
 

@@ -5,7 +5,10 @@
 ( Released under the terms of the GNU LGPL.                )
  
 $author Revar Desmera <revar@belfry.com>
-$version 1.000
+$version 1.003
+ 
+( A program to let you easily create options that can be   )
+( edited via a GUI dialog.                                 )
  
 $def LIST_PROPDIR   "%s#"
 $def DESCMPI        "{eval:{list:%s}}"
@@ -48,7 +51,6 @@ $def SAY_PROP       "_say/def/say"
 $def OSAY_PROP      "_say/def/osay"
 $def NORM_SAY_PROP  "_say/normal"
 $def ADHOC_SAY_PROP "_say/adhoc"
- 
  
 $def SPECIES_PROP   "species"
 $def ALLOW_CUSTOM_SPECIES 1 (change to 0 if custom species not allowed )
@@ -111,12 +113,12 @@ $def yesprop? getpropstr 1 strcut pop "y" stringcmp not
         val @ key @ ->[] val !
     repeat
     val @ array_count 2 < if
-        obj @ proplist @ lmgr-deletelist
+        proplist @ obj @ lmgr-deletelist
         obj @ prop @ val @ 0 []
         looknotify @ if LOOK_NOTIFY strcat then
         setprop
     else
-        obj @ proplist @ lmgr-deletelist
+        proplist @ obj @ lmgr-deletelist
         obj @ proplist @ val @ array_put_proplist
         obj @ prop @
         proplist @ DESCMPI fmtstring
@@ -177,6 +179,7 @@ $def yesprop? getpropstr 1 strcut pop "y" stringcmp not
     extradata @ "context" [] var! context
     context @ "target" [] var! targ
  
+    val @ array? not if { val @ }list val ! then
     val @ array_count 1 > if
         targ @ exit? not if
             "Only exits may have multiple destinations." exit
@@ -230,6 +233,7 @@ $def yesprop? getpropstr 1 strcut pop "y" stringcmp not
     context @ "target" [] var! targ
  
     val @ not if { #-1 }list val ! then
+    val @ array? not if { val @ }list val ! then
     val @ 0 [] val !
  
     0 try
@@ -497,32 +501,42 @@ $def yesprop? getpropstr 1 strcut pop "y" stringcmp not
             {
                 "group"  "Main"
                 "name"   "@link"
-                "type"   "dbreflist"
                 obj @ case
                     player? when
+                        "type"    "dbref"
                         "label"   "Character's home room"
                         "help"    "This lets you select the home room for this player.  A player's home is where they return to when swept, or when they type 'home'."
                         "objtype" { "room" }list
+                        "linkable" 1
+                        "value"   obj @ getlink
                     end
                     room?   when
+                        "type"    "dbref"
                         "label"   "Room's drop-to destination"
                         "help"    "This lets you select where things dropped in this room will be sent to."
                         "objtype" { "room" "bad" }list
+                        "linkable" 1
+                        "value"   obj @ getlink
                     end
                     thing?  when
+                        "type"    "dbref"
                         "label"   "Thing's home location"
                         "help"    "This lets you select the home for this thing.  A thing's home is where it returns to when swept, or when the player holding it type 'home'."
                         "objtype" { "player" "room" "thing" }list
+                        "linkable" 1
+                        "value"   obj @ getlink
                     end
                     exit?   when
+                        "type"    "dbreflist"
                         "label"   "Exit's destination(s)"
                         "help"    "When someone uses an exit, one of several things may happen, depending on the type of object that is the exit's destination.\r\rIf it is a room, then the user is moved to that room through the exit.\r\rIf it is a player, and that player is set Jump_OK, the user is moved through to exit to the room the destination player is in.\r\rIf it is a thing, then that thing is moved into the user's inventory.\r\rIf it is a MUF program, then that program is run, with any remaining arguments on the line passed as arguments to the program.\r\rIf it is an exit, then this is a 'meta-link', and that remote exit is triggered as if the user were at the destination exit's location.  Exits triggered this way will move Things to the exit's location, instead of into the user's inventory.  An exit may meta-link to multiple exits, to trigger all of them.  You can specify multiple meta-link destinations by seperating them with semicolons (';'s)."
                         "objtype" { "player" "room" "thing" "program" "exit" "bad" }list
+                        "linkable" 1
+                        "value"   obj @ getlinks_array
                     end
                 endcase
                 "vfy_cb" 'setlink_vfy
                 "save_cb" 'setlink_save
-                "value"  obj @ getlinks_array
             }dict
         then
  
@@ -940,7 +954,11 @@ q
 @set $tmp/prog1=W
 @set $tmp/prog1=L
 @set $tmp/prog1=3
+@propset $tmp/prog1=int:/.debug/errcount:4
+@propset $tmp/prog1=int:/.debug/lastcrash:1029897319
+@propset $tmp/prog1=str:/.debug/lastcrashtime:08/20/02 19:35:19
+@propset $tmp/prog1=str:/.debug/lasterr:lib-optionsgui(#105), line 488; DBCMP: Invalid argument type.
 @propset $tmp/prog1=str:/_/de:A scroll containing a spell called cmd-objeditgui
 @propset $tmp/prog1=str:/_author:Revar Desmera <revar@belfry.com>
-@propset $tmp/prog1=str:/_version:1.000
+@propset $tmp/prog1=str:/_version:1.003
 

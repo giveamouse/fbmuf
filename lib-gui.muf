@@ -119,6 +119,7 @@
          {SPINNER     An integer entry field with up/down buttons.
          {SCALE       A floating point slider control.
          {LISTBOX     A control for selecting one or more options.
+         {TREE        A control for selecting one of a heirarchy of options.
          {FRAME       A box to put other controls in, with optional captionr
                         and outline.
          {NOTEBOOK    A notebook container, to organize controls into related
@@ -167,9 +168,9 @@
      A special key of " default" will be used if it exists, when a gui event
      comes in that does not match one of the more specific handlers.
      Gui callbacks are expected to have the signature:
-        [ dict:Context str:DlogID str:CtrlID str:GuiEventType -- int:ExitRequested ]
+       [ dict:Context str:DlogID str:CtrlID str:GuiEventType -- int:ExitRequested ]
      Error handler callbacks are expected to have the signature:
-        [ dict:Context str:DlogID str:CtrlID str:ErrText str:ErrCode -- int:ExitRequested ]
+       [ dict:Context str:DlogID str:CtrlID str:ErrText str:ErrCode -- int:ExitRequested ]
      The Context dictionaries will have the following entries:
          "descr"       the descriptor that the dialog was for.
          "dlogid"      the DlogID of the dialog that generated the event.
@@ -223,17 +224,17 @@
      or EVENT_REGISTER, they will be called.
   
      Gui callbacks are expected to have the signature:
-     [ dict:Context str:DlogID str:CtrlID str:GuiEventType -- int:ExitRequested ]
+       [ dict:Context str:DlogID str:CtrlID str:GuiEventType -- int:ExitRequested ]
      If the callback returns true, then GUI_EVENT_PROCESS will exit.
  
      Gui error handler callbacks are expected to have the signature:
-     [ dict:Context str:DlogID str:CtrlID str:ErrText str:ErrCode -- int:ExitRequested ]
+       [ dict:Context str:DlogID str:CtrlID str:ErrText str:ErrCode -- int:ExitRequested ]
      If the callback returns true, then GUI_EVENT_PROCESS will exit.
      If an error event is received that we don't have a handler for,
      then this will ABORT the program, with the given error message.
   
      Miscellaneous event callbacks have the signature:
-     [ dict:Context str:EventType -- int:ExitRequested ]
+       [ dict:Context str:EventType -- int:ExitRequested ]
      If the callback returns true, then GUI_EVENT_PROCESS will exit.
  
      You must do a GUI_DLOG_DEREGISTER when you use the GUI_DLOG_CLOSE
@@ -262,10 +263,10 @@
 )
  
 $author Revar Desmera <revar@belfry.com>
-$lib-version 6.002
-$version 6.002
+$lib-version 6.003
+$version 6.003
 $note This is a MUF library to make it much simpler to create GUI dialogs.
-
+ 
  
 : list_parse[ list:spec -- dict:args list:ctrls ]
     ""      var! key
@@ -735,7 +736,7 @@ PUBLIC event_statedata_set
             then
         else
             { "context" args @ }dict args !
-
+ 
             OtherStateData @
             dup not if pop { }list then
             event @ []
@@ -819,47 +820,48 @@ PUBLIC gui_event_process
     buttonmap @ swap array_getitem
 ;
 PUBLIC gui_messagebox
-
+ 
 $pubdef GUI_DLOGS_REGISTERED   "$lib/gui" match "gui_dlogs_registered"   call
 $pubdef GUI_DLOG_REGISTER      "$lib/gui" match "gui_dlog_register"      call
 $pubdef GUI_DLOG_DEREGISTER    "$lib/gui" match "gui_dlog_deregister"    call
 $pubdef GUI_DLOG_STATEDATA_SET "$lib/gui" match "gui_dlog_statedata_set" call
-
+ 
 $pubdef EVENTS_REGISTERED      "$lib/gui" match "events_registered"   call
 $pubdef EVENT_REGISTER         "$lib/gui" match "event_register"      call
 $pubdef EVENT_DEREGISTER       "$lib/gui" match "event_deregister"    call
 $pubdef EVENT_STATEDATA_SET    "$lib/gui" match "event_statedata_set" call
-
+ 
 $pubdef GUI_GENERATE           "$lib/gui" match "gui_generate"      call
 $pubdef GUI_EVENT_PROCESS      "$lib/gui" match "gui_event_process" call
 $pubdef GUI_MESSAGEBOX         "$lib/gui" match "gui_messagebox"    call
-
+ 
 $pubdef {SIMPLE_DLOG  { D_SIMPLE
 $pubdef {TABBED_DLOG  { D_TABBED
 $pubdef {HELPER_DLOG  { D_HELPER
-
+ 
 $pubdef {DATUM     { C_DATUM
 $pubdef {LABEL     { C_LABEL
 $pubdef {IMAGE     { C_IMAGE
 $pubdef {BUTTON    { C_BUTTON
 $pubdef {CHECKBOX  { C_CHECKBOX
 $pubdef {RADIO     { C_RADIOBTN
-$pubdef {PASSWORD  { "password"
+$pubdef {PASSWORD  { C_PASSWORD
 $pubdef {EDIT      { C_EDIT
 $pubdef {MULTIEDIT { C_MULTIEDIT
 $pubdef {COMBOBOX  { C_COMBOBOX
 $pubdef {LISTBOX   { C_LISTBOX
+$pubdef {TREE      { C_TREE
 $pubdef {SCALE     { C_SCALE
 $pubdef {SPINNER   { C_SPINNER
-
+ 
 $pubdef {HRULE     { C_HRULE
 $pubdef {VRULE     { C_VRULE
-
+ 
 $pubdef {FRAME     { C_FRAME
-$pubdef {MENU      { "menu"
+$pubdef {MENU      { C_MENU
 $pubdef {NOTEBOOK  { C_NOTEBOOK
 $pubdef {PANE      { "notebook_pane"
-
+ 
 $pubdef }DLOG      }list
 $pubdef }PANE      }list
 $pubdef }MENU      }list
@@ -873,5 +875,6 @@ q
 @set $tmp/prog1=S
 @set $tmp/prog1=H
 @set $tmp/prog1=V
+@set $tmp/prog1=Z
 @set $tmp/prog1=3
 
