@@ -180,7 +180,6 @@ PUBLIC REF-first
 PUBLIC REF-next
 PUBLIC REF-list
 PUBLIC REF-inlist?
-PUBLIC REF-array
 PUBLIC REF-allrefs
 PUBLIC REF-filter (address objref reflistname -- refx...ref1 refcount)
 PUBLIC REF-editlist  (players? objref reflistname -- )
