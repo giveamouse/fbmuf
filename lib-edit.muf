@@ -138,68 +138,19 @@ $define SRNGcopy    sr-copyrng    $enddef
 ;
   
   
-(
-  Shell Sort
-  
-  This particular implementation is based on the version in
-  AHU's Data Structures and Algorithms, p.290
-  
-  Takes  [ x1 x2 x3 ... xn n asc? insens? -- x1' x2' x3' ... xn' n ]
-  
-  Requires tinyMUCK 2.2 or later
-  
-  Stolen directly from Gazer's code, with a few mods.
-  
-  Baseline version 1.0    04-Oct-90
-     Gazer   [dbriggs@nrao.edu]
-)
-  
-( These functions return a true flag when the data items )
-( should be swapped.  )
-  
-: EDITsortCaseInsensAsc  stringcmp 0 > ;
-: EDITsortCaseSensAsc    strcmp 0 > ;
-: EDITsortCaseInsensDesc stringcmp 0 < ;
-: EDITsortCaseSensDesc   strcmp 0 < ;
-  
-: EDITsortJLoop  ( <strings*n> n cmp inc i j -- <strings*n> n cmp inc i )
-    dup 0 <= if pop exit then     ( while j > 0 )
-    dup 5 + pick                  ( get A[j] )
-    over 5 pick + 6 + pick        ( get A[j+inc] )
-    6 pick execute if             ( do comparison )
-      dup 5 + pick                ( swap: get A[j] )
-      over 5 pick + 6 + pick      (   get A[j+inc] )
-      3 pick 6 + put              (   put into A[j] )
-      over 5 pick + 5 + put       (   put into A[j+inc] )
-      3 pick -                    ( j := j - inc )
-    else
-      pop exit then               ( break out if we don't swap )
-    EDITsortJLoop
-;
-  
-: EDITsortILoop  ( <strings*n> n cmp inc i -- <strings*n> n cmp inc)
-    dup 5 pick > if pop exit then ( for i := inc + 1 to n )
-    over over swap - EDITsortJLoop    (   j := i - inc )
-    1 + EDITsortILoop                 (   while j > 0 )
-;
-  
-: EDITsortIncLoop  ( <strings*n> n cmp inc --- <strings*n> n )
-    dup 0 <= if pop pop exit then ( while inc > 0)
-    dup 1 + EDITsortILoop             (   for i := inc + 1 to n )
-    2 / EDITsortIncLoop
-;
   
 : EDITsort    ( {rng} ascending?  CaseSensitive? -- {rng'} )
     if
-        if 'EDITsortCaseSensAsc
-        else 'EDITsortCaseSensDesc
+        if SORTTYPE_CASE_ASCEND
+        else SORTTYPE_CASE_DESCEND
         then
     else
-        if 'EDITsortCaseInsensAsc
-        else 'EDITsortCaseInsensDesc
+        if SORTTYPE_NOCASE_ASCEND
+        else SORTTYPE_NOCASE_DESCEND
         then
     then
-    over 2 / EDITsortIncLoop
+	var! sorttype
+	array_make sorttype @ array_sort array_vals
 ;
   
   
