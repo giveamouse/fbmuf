@@ -169,7 +169,18 @@
      Gui callbacks are expected to have the signature:
      [ dict:Context str:DlogID str:CtrlID str:GuiEventType -- int:ExitRequested ]
      Error handler callbacks are expected to have the signature:
-     [ int:Dscr str:DlogID str:CtrlID str:ErrText str:ErrCode -- int:ExitRequested ]
+     [ dict:Context str:DlogID str:CtrlID str:ErrText str:ErrCode -- int:ExitRequested ]
+     The Context dictionaries will have the following entries:
+         "descr"       the descriptor that the dialog was for.
+         "dlogid"      the DlogID of the dialog that generated the event.
+         "id"          the ID of the control that generated the event.
+         "dismissed"   true if the dialog was dismissed, 0 otherwise.
+         "event"       the type of gui event.  ie: buttonpress, menuselect.
+         "data"        array of extra gui-event specific data.
+         "values"      the dictionary of control values, keyed by control name.
+         "statedata"   data set with EVENT_STATEDATA_SET.
+         "errcode"     error code field for error events only.
+         "errtext"     error text for error events only.
   
  
   GUI_DLOG_DEREGISTER[ str:dlogid -- ]
@@ -190,6 +201,9 @@
      other events that you don't have a handler for.
      Miscellaneous event callbacks have the signature:
      [ dict:Context str:EventType -- int:ExitRequested ]
+     The Context dictionary will have the following entries:
+         "statedata"   data set with EVENT_STATEDATA_SET.
+         "context"     event context info returned by EVENT_WAITFOR.
   
        
   EVENT_DEREGISTER[ str:dlogid -- ]
@@ -213,9 +227,9 @@
      If the callback returns true, then GUI_EVENT_PROCESS will exit.
  
      Gui error handler callbacks are expected to have the signature:
-     [ int:Dscr str:DlogID str:CtrlID str:ErrText str:ErrCode -- int:ExitRequested ]
+     [ dict:Context str:DlogID str:CtrlID str:ErrText str:ErrCode -- int:ExitRequested ]
      If the callback returns true, then GUI_EVENT_PROCESS will exit.
-     If an error event is recieved that we don't have a handler for,
+     If an error event is received that we don't have a handler for,
      then this will ABORT the program, with the given error message.
   
      Miscellaneous event callbacks have the signature:
@@ -248,8 +262,8 @@
 )
  
 $author Revar
-$lib-version 1.1
-$version 1.1
+$lib-version 6.002
+$version 6.002
 
 $def }join }list "" array_join 
  
@@ -680,7 +694,7 @@ PUBLIC event_statedata_set
             args @ "statedata" ->[] args !
  
             errcode @ if
-                dscr @ dlogid @ id @ errtext @ errcode @
+                args @ dlogid @ id @ errtext @ errcode @
                 { id @ "|" errcode @ }join
                 dests @ dispatch
                 not if
@@ -720,6 +734,8 @@ PUBLIC event_statedata_set
                 break
             then
         else
+            { "context" args @ }dict args !
+
             OtherStateData @
             dup not if pop { }list then
             event @ []
