@@ -164,7 +164,7 @@ q
 @set $tmp/prog1=2
 @set $tmp/prog1=/_defs/REF-add:reflist_add
 @set $tmp/prog1=/_defs/REF-delete:reflist_del
-@set $tmp/prog1=/_defs/REF-first:array_get_reflist 0 []
+@set $tmp/prog1=/_defs/REF-first:array_get_reflist dup if 0 [] else pop #-1 then
 @set $tmp/prog1=/_defs/REF-next:"$lib/reflist" match "REF-next" call
 @set $tmp/prog1=/_defs/REF-inlist?:reflist_find
 @set $tmp/prog1=/_defs/REF-list:"$lib/reflist" match "REF-list" call
