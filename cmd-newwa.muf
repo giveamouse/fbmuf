@@ -1,14 +1,13 @@
 @prog cmd-newwa
 1 99999 d
 1 i
-( WhereAre v6.02   Copyright 01/2002 by Revar revar@belfry.com )
-( Released under the terms of the LGPL.                        )
-     
+( WhereAre v6.03   Copyright 2002 by Revar revar@belfry.com )
+( Released under the terms of the LGPL.                     )
+ 
 $author Revar Desmera <revar@belfry.com>
-$version 6.02
+$version 6.03
 $note Released under the terms of the LGPL.
-
-
+ 
 $def WA_PROP  "_whereare"
 $def DIR_PROP "_wherearedir"
 $def WF_PROP  "_prefs/con_announce_list"
@@ -23,10 +22,10 @@ $def WADEFAULT_PROP     "_prefs/whereare/defaultopts"
 $def WHEREISOK_PROP     "whereis/_ok?"
 $def WHEREISUNFIND_PROP "whereis/_unfindable"
  
-$def MASTER_FORMAT "%3[cnt]~ %3[act]~%3[wfl]~ %1[adult]~%-25.25[loc]~  "
-$def OLD_FORMAT    "%-34.34[loc]~ %3[cnt]~%1[adult]~"
+$def MASTER_FORMAT "%3[cnt]~ %3[act]~%3[wfl]~ %1[adult]~%-25.25[locname]~  "
+$def OLD_FORMAT    "%-34.34[locname]~ %3[cnt]~%1[adult]~"
  
-$undef LASTPUBLIC (use lastpublic timestamp prop for idleness determination )
+$undef LASTPUBLIC (use lastpublic timestamp for idleness determination )
 $def LASTPUBLIC_PROP "~lastpublic"
  
 $undef CHECKAGE
@@ -52,7 +51,6 @@ $endif
  
 : oktoname?[ ref:who dict:opts -- bool:isok ]
     opts @ "quell" [] not if
-        me @ #1026 dbcmp if 1 exit then
         me @ "w" flag? if 1 exit then
     then
     who @ namenever_prop getpropstr if 0 EXIT then
@@ -136,12 +134,22 @@ $endif
     opts @ "mincnt"  [] var! min
     opts @ "sortcol" [] var! sorton
     opts @ "optcol"  [] var! optfield
+    opts @ "showall" [] var! showall
+    0 var! nonpublic
  
     { }dict var! walist
     online_array { }list array_union
     foreach swap pop var! who
         who @ location var! wholoc
-        wholoc @ WA_PROP getpropstr not if continue then
+        0 nonpublic !
+        wholoc @ WA_PROP getpropstr not if
+            showall @ not
+            me @ "wizard" flag? not
+            or if
+                continue
+            then
+            1 nonpublic !
+        then
 $ifdef CHECKAGE
         wholoc @ checkage? not if continue then
 $endif
@@ -149,7 +157,7 @@ $endif
         dup not if
             pop {
                 "loc"   wholoc @
-                "locname" wholoc @ name
+                "locname" wholoc @ name nonpublic @ if "[%.23s]" fmtstring then
                 "note"  wholoc @ WA_PROP getpropstr strip
                 "dir"   wholoc @ DIR_PROP getpropstr strip
 $ifdef CHECKAGE
@@ -349,6 +357,7 @@ $endif
         "The following specify other display options:"
         me @ "w" flag? if
             "  #quell         Lets wizards see #names and #wf as a normal player would."
+            "  #all           Lets wizards see all rooms, even those not public."
         then
         "  #reversed      Sort display in reversed order."
         "  #old           Show results like old 'whereare'.  Implies #twoline."
@@ -375,6 +384,13 @@ $endif
     }list { me @ }list array_notify
 ;
  
+ 
+: stringminpfx[ str:pattern str:val int:minlen -- bool:truefalse ]
+    pattern @ val @ stringpfx
+    val @ strlen minlen @ >= and
+;
+ 
+ 
 : parse_args[ dict:opts str:args int:ignore -- arr:opts 0 | 1 ]
     1 var! firstopt
     begin
@@ -387,7 +403,7 @@ $endif
             0 firstopt !
             ignore @ if
                 dup "#help"     swap stringpfx if pop continue then
-                dup "#default"  swap stringpfx if pop continue then
+                dup "#default"  swap 3 stringminpfx if pop continue then
                 dup "#reset"    swap stringpfx if pop continue then
 $ifdef CHECKAGE
                 dup "#adult"    swap stringpfx if pop continue then
@@ -400,7 +416,7 @@ $endif
                 dup "#setdir"   swap stringpfx if pop continue then
             else
                 dup "#help"     swap stringpfx if pop show_usage 1 exit then
-                dup "#default"  swap stringpfx if pop args @ set_default 1 exit then
+                dup "#default"  swap 3 stringminpfx if pop args @ set_default 1 exit then
                 dup "#reset"    swap stringpfx if pop "" set_default 1 exit then
 $ifdef CHECKAGE
                 compare-my-age if
@@ -436,6 +452,7 @@ $endif
         dup "#oneline"    swap stringpfx if pop "1ln" opts @ "format" ->[] opts ! continue then
  
         dup "#quell"      swap stringpfx if pop "yes" opts @ "quell"  ->[] opts ! continue then
+        dup "#all"        swap stringpfx if pop 1 opts @ "showall"  ->[] opts ! continue then
         dup "#reversed"   swap stringpfx if pop opts @ "ascend" [] not opts @ "ascend" ->[] opts ! continue then
  
         dup number? if atoi opts @ "mincnt" ->[] opts ! continue then
@@ -455,6 +472,7 @@ $endif
         "quell"   ""
         "ascend"  0
         "style"   "new"
+        "showall" 0
     }dict
     me @ WADEFAULT_PROP getpropstr 1 parse_args if exit then
     args @ 0 parse_args if exit then
