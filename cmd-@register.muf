@@ -204,7 +204,7 @@ lvar regprop
     then
     
     dup "=" instr not if
-        regobj @ #0 dbcmp not if
+        regobj @ dup #0 dbcmp swap me @ dbcmp or not if
             "You need to specify a value to set with @reg #prop" .tell
             pop exit
         then
@@ -214,33 +214,52 @@ lvar regprop
         regobj @ regprop @ rot strcat list-props
         "Done." .tell exit
     then
-    "=" split strip swap strip
-    match dup not if
-        "I don't see that object here." .tell pop exit
-    then
-    dup #-2 dbcmp if
-        "I don't know which object you mean." .tell pop exit
-    then
-    
-    swap " " split if
-        pop pop "You cannot have spaces in the registration name." .tell exit
-    then
-    regobj @ regprop @ 3 pick strcat pretty_propref
-    dup if
-        "Used to be registered as "
-        regprop @ strcat swap strcat
+    "=" split strip dup not if "You must specify a registration name." .tell exit
+    swap strip dup not if pop  (Nothing to register; remove $regname)
+        " " split if
+            pop pop "You cannot have spaces in the registration name." .tell exit
+        then
+        regobj @ regprop @ 3 pick strcat pretty_propref
+        dup if
+            "Used to be registered as "
+            regprop @ strcat swap strcat
+            .tell
+        else pop "No entry to remove." .tell exit
+        then
+  
+        regobj @ regprop @ 3 pick strcat remove_prop
+  
+        "Registry entry " regprop @ strcat swap strcat
+        " on " strcat regobj @ unparseobj " removed." strcat strcat
         .tell
-    else pop
+    else
+        match dup not if
+            "I don't see that object here." .tell pop exit
+        then
+        dup #-2 dbcmp if
+            "I don't know which object you mean." .tell pop exit
+        then
+        
+        swap " " split if
+            pop pop "You cannot have spaces in the registration name." .tell exit
+        then
+        regobj @ regprop @ 3 pick strcat pretty_propref
+        dup if
+            "Used to be registered as "
+            regprop @ strcat swap strcat
+            .tell
+        else pop
+        then
+      
+        regobj @ regprop @ 3 pick strcat
+        4 pick set_propref
+      
+        regobj @ regprop @ 3 pick strcat
+        pretty_propref "Now registered as "
+        regprop @ strcat swap strcat
+        " on " strcat regobj @ unparseobj strcat
+        .tell
     then
-  
-    regobj @ regprop @ 3 pick strcat
-    4 pick set_propref
-  
-    regobj @ regprop @ 3 pick strcat
-    pretty_propref "Now registered as "
-    regprop @ strcat swap strcat
-    " on " strcat regobj @ unparseobj strcat
-    .tell
 ;
 .
 c
