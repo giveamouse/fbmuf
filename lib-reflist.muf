@@ -54,56 +54,54 @@ $include $lib/look
 $include $lib/match
   
 : REF-delete (obj reflist killref -- )
-  3 pick 3 pick getpropstr " " strcat
-  swap int intostr " " strcat
-  "#" swap strcat STRsplit
-  strcat STRsms STRstrip setpropstr
+  3 dupn pop getpropstr " " strcat
+  swap "%d " fmtstring "" swap subst
+  " " "  " subst
+  strip setpropstr
 ;
   
 : REF-add (obj reflist addref -- )
-  3 pick 3 pick 3 pick REF-delete
-  3 pick 3 pick getpropstr " " strcat
-  swap int intostr " " strcat
-  "#" swap strcat strcat
-  STRsms STRstrip setpropstr
+  3 dupn REF-delete
+  3 dupn pop getpropstr " " strcat
+  swap "%d " fmtstring strcat
+  " " "  " subst
+  strip setpropstr
 ;
   
 : REF-first (obj reflist -- firstref)
-  getpropstr " " STRsplit pop
-  dup not if pop #-1 exit then
-  1 strcut swap pop atoi dbref
+  getpropstr " " split pop
+  dup if stod else pop #1 then
 ;
   
 : REF-next (obj reflist currref -- nextref)
   rot rot getpropstr
-  swap int intostr
-  " " strcat "#" swap strcat
-  STRsplit swap pop STRstrip
-  dup not if pop #-1 exit then
-  " " STRsplit pop
-  1 strcut swap pop
-  atoi dbref
+  swap "%d " fmtstring split
+  swap pop striplead
+  dup if
+      " " split pop stod
+  else
+      pop #-1
+  then
 ;
   
 : REF-inlist? (objref reflistname dbreftocheck -- inlist?)
   rot rot getpropstr " " strcat
-  swap int intostr
-  " " strcat "#" swap strcat
-  instr
+  swap "%d " fmtstring instr
 ;
   
 : REF-allrefs (d s -- dx...d1 i)
   getpropstr STRsms strip
-  0 swap "#" explode
-  begin
-    dup while
-    1 - swap strip
-    dup not if pop continue then
-    atoi dbref
-    over 3 + -1 * rotate
-    dup 2 + rotate 1 + over 2 + -1 * rotate
+  0 array_make
+  { rot " " explode }list
+  foreach
+    swap pop
+    stod dup if
+      swap dup array_count array_setitem
+    else
+      pop
+    then
   repeat
-  pop
+  array_vals
 ;
 
 : REF-list  (objref reflistname -- liststr)
@@ -112,16 +110,20 @@ $include $lib/match
 
 : REF-filter (a d s -- dx...d1 i)
   getpropstr STRsms strip
-  0 rot rot begin
-    striplead dup while
-    "#" .split swap strip
-    dup not if pop continue then
-    atoi dbref dup 4 pick execute if
-      -4 rotate rot 1 + rot rot
+  0 array_make
+  { rot " " explode }list
+  foreach
+    swap pop
+    stod dup if
+      dup 3 pick execute if
+        swap dup array_count array_setitem
+      else pop
+      then
     else pop
     then
   repeat
-  pop pop
+  swap pop
+  array_vals
 ;
 
 

@@ -8,4 +8,5 @@ def no? ( s -- i ) (checks that string starts with "n", is "0", or is blank) dup
 def yes? ( s -- i ) ( checks that string starts with y ) 1 strcut pop "y" stringcmp not
 def tell me @ swap notify
 def otell loc @ me @ rot notify_except ( s -- ) ( Display string to everyone in my room except me )
+def pmatch pmatch (This is inserver as of 6.0)
 q

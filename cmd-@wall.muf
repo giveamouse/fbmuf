@@ -12,15 +12,16 @@
     me @ swap notify
 
     "me" match name " shouts, \"" strcat swap strcat "\"" strcat
+    var mesg mesg !
 
-    1 condescr
-    begin
-	over 0 > while over
-	dup descrcon condbref me @ dbcmp if pop continue then
-	descrcon over connotify
-	nextdescr
+    {
+        #-1 descr_array
+        { descr }list
+    } array_ndiff
+    foreach
+        descrcon mesg @ connotify
+        pop
     repeat
-    pop pop
 ;
 .
 c

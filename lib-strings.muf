@@ -32,104 +32,70 @@ This routine is useful for parsing command line input:
 )
   
   
-: split
-    swap over over swap
-    instr dup not if
-        pop swap pop ""
-    else
-        1 - strcut rot
-        strlen strcut
-        swap pop
-    then
-;
-  
-  
-: rsplit
-    swap over over swap
-    rinstr dup not if
-        pop swap pop ""
-    else
-        1 - strcut rot
-        strlen strcut
-        swap pop
-    then
-;
-  
-  
 : sms ( str -- str')
-    dup "  " instr if
-        " " "  " subst 'sms jmp
-    then
+  begin
+	dup "  " instr while
+	" " "  " subst
+  repeat
 ;
   
   
 : fillfield (str padchar fieldwidth -- padstr)
-  rot strlen - dup 1 < if pop pop "" exit then
-  swap over begin swap dup strcat swap 2 / dup not until pop
+  rot strlen -
+  dup 1 < if
+	pop pop "" exit
+  then
+  swap
+  dup strcat dup strcat
+  dup strcat dup strcat
+  dup strcat
+  begin
+	over over strlen < while
+	dup strcat dup strcat
+  repeat
   swap strcut pop
 ;
   
 : left (str fieldwidth -- str')
-  over " " rot fillfield strcat
+  "%-" swap intostr strcat "s" strcat fmtstring
 ;
   
 : right (str fieldwidth -- str')
-  over " " rot fillfield swap strcat
+  "%" swap intostr strcat "s" strcat fmtstring
+  ( Old Code: over " " rot fillfield swap strcat )
 ;
   
 : center (str fieldwidth -- str')
-  over " " rot fillfield
-  dup strlen 2 / strcut
-  rot swap strcat strcat
+  "%|" swap intostr strcat "s" strcat fmtstring
+  ( Old Code:
+	over " " rot fillfield
+	dup strlen 2 / strcut
+	rot swap strcat strcat
+  )
 ;
   
   
-: STRasc ( c -- i )
-    " !\"#$%&'()*+,-./0123456789:;<=>?@ABCDEFGHIJKLMNOPQRSTUVWXYZ"
-    "[\\]^_`abcdefghijklmnopqrstuvwxyz{|}~" strcat
-    swap
-    dup not if
-	and exit
-    then
-    instr dup if
-        31 +
-    then
-;
-  
-: STRchr ( i -- c )
-    dup 31 > over 128 < and if
-        " !\"#$%&'()*+,-./0123456789:;<=>?@ABCDEFGHIJKLMNOPQRSTUVWXYZ"
-        "[\\]^_`abcdefghijklmnopqrstuvwxyz{|}~" strcat
-        swap 32 - strcut swap pop 1 strcut pop
-    else
-        pop "."
-    then
-;
-  
-: STRparse ( s -- s1 s2 s3 ) (
-    Before: " #option  tom dick  harry = message "
-    After:  "option" "tom dick harry" " message "
-    )
-    "=" rsplit swap
-    striplead dup "#" 1 strncmp not if
-        1 strcut swap pop
-        " " split
-    else
-        "" swap
-    then
-    strip sms rot
+: STRparse ( s -- s1 s2 s3 )
+  (
+	Before: " #option  tom dick  harry = message "
+	After:  "option" "tom dick harry" " message "
+  )
+  "=" rsplit swap
+  striplead dup "#" 1 strncmp not if
+	1 strcut swap pop
+	" " split
+  else
+	"" swap
+  then
+  strip sms rot
 ;
     
   
-public split
-public rsplit
 public sms
 public fillfield
 public left
 public right
 public center
-public STRasc
-public STRchr
 public STRparse
 .
 c
@@ -138,35 +104,35 @@ q
 @register #me lib-strings=tmp/prog1
 @set $tmp/prog1=L
 @set $tmp/prog1=/_/de:A scroll containing a spell called stringslib
-@set $tmp/prog1=/_defs/.asc:"$lib/strings" match "STRasc" call
+@set $tmp/prog1=/_defs/.asc:ctoi
 @set $tmp/prog1=/_defs/.blank?:striplead not
 @set $tmp/prog1=/_defs/.center:"$lib/strings" match "center" call
-@set $tmp/prog1=/_defs/.chr:"$lib/strings" match "STRchr" call
+@set $tmp/prog1=/_defs/.chr:itoc dup not if pop "." then
 @set $tmp/prog1=/_defs/.command_parse:"$lib/strings" match "STRparse" call
 @set $tmp/prog1=/_defs/.fillfield:"$lib/strings" match "fillfield" call
 @set $tmp/prog1=/_defs/.left:"$lib/strings" match "left" call
 @set $tmp/prog1=/_defs/.right:"$lib/strings" match "right" call
-@set $tmp/prog1=/_defs/.rsplit:"$lib/strings" match "rsplit" call
+@set $tmp/prog1=/_defs/.rsplit:rsplit
 @set $tmp/prog1=/_defs/.singlespace:"$lib/strings" match "sms" call
 @set $tmp/prog1=/_defs/.sls:striplead
 @set $tmp/prog1=/_defs/.sms:"$lib/strings" match "sms" call
-@set $tmp/prog1=/_defs/.split:"$lib/strings" match "split" call
+@set $tmp/prog1=/_defs/.split:split
 @set $tmp/prog1=/_defs/.strip:strip
 @set $tmp/prog1=/_defs/.stripspaces:strip
 @set $tmp/prog1=/_defs/.sts:striptail
-@set $tmp/prog1=/_defs/STRasc:"$lib/strings" match "STRasc" call
+@set $tmp/prog1=/_defs/STRasc:ctoi
 @set $tmp/prog1=/_defs/STRblank?:striplead not
 @set $tmp/prog1=/_defs/STRcenter:"$lib/strings" match "center" call
-@set $tmp/prog1=/_defs/STRchr:"$lib/strings" match "STRchr" call
+@set $tmp/prog1=/_defs/STRchr:itoc dup not if pop "." then
 @set $tmp/prog1=/_defs/STRfillfield:"$lib/strings" match "fillfield" call
 @set $tmp/prog1=/_defs/STRleft:"$lib/strings" match "left" call
 @set $tmp/prog1=/_defs/STRparse:"$lib/strings" match "STRparse" call
 @set $tmp/prog1=/_defs/STRright:"$lib/strings" match "right" call
-@set $tmp/prog1=/_defs/STRrsplit:"$lib/strings" match "rsplit" call
+@set $tmp/prog1=/_defs/STRrsplit:rsplit
 @set $tmp/prog1=/_defs/STRsinglespace:"$lib/strings" match "sms" call
 @set $tmp/prog1=/_defs/STRsls:striplead
 @set $tmp/prog1=/_defs/STRsms:"$lib/strings" match "sms" call
-@set $tmp/prog1=/_defs/STRsplit:"$lib/strings" match "split" call
+@set $tmp/prog1=/_defs/STRsplit:split
 @set $tmp/prog1=/_defs/STRstrip:strip
 @set $tmp/prog1=/_defs/STRsts:striptail
 @set $tmp/prog1=/_docs:@list $lib/strings=1-29

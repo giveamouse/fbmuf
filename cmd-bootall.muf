@@ -3,15 +3,21 @@
 1 i
 : bootall
   "Disconnecting: " swap strcat
+  var mesg mesg !
   "me" match me !
-  concount begin
-    dup while 1 -
-    dup condbref me @ dbcmp not if
-      dup 3 pick connotify
-      dup conboot
-    then
+
+  #-1 descr_array
+  { descr }list
+  array_diff
+
+  foreach
+	descrcon
+	dup mesg @ connotify
+	dup conboot
+	pop
   repeat
-  pop "Done." .tell
+
+  "Done." .tell
 ;
 .
 c

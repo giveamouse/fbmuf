@@ -143,13 +143,13 @@ lvar progcnt
   "@flock " rot get-refname strcat
   "=" strcat swap strcat
   me @ swap notify
-  0 sleep
+  descr descrflush
 ;
   
   
 : dump-props-loop (s d s -- ) (refname object propdir -- )
   begin
-    0 sleep
+    descr descrflush
     (refname object propdir -- )
     begin
       over swap nextprop
@@ -233,11 +233,11 @@ lvar progcnt
     me @ swap notify
   repeat
   pop pop
-  0 sleep
+  descr descrflush
 ;
   
 : dump-obj (d -- )
-  0 sleep
+  descr descrflush
   dup ok? not if pop exit then
   one? @ if dup originalobj @ dbcmp not if pop exit then then
   owned? @ if dup owner originalobj @ owner dbcmp not if pop exit then then
