@@ -752,6 +752,7 @@ q
 @set $tmp/prog1=S
 @set $tmp/prog1=H
 @set $tmp/prog1=3
+@set $tmp/prog1=V
 @propset $tmp/prog1=str:/_defs/EVENT_DEREGISTER:"$lib/gui" match "event_deregister" call
 @propset $tmp/prog1=str:/_defs/EVENT_REGISTER:"$lib/gui" match "event_register" call
 @propset $tmp/prog1=str:/_defs/EVENTS_REGISTERED:"$lib/gui" match "events_registered" call

@@ -87,6 +87,7 @@ q
 @set $tmp/prog1=S
 @set $tmp/prog1=H
 @set $tmp/prog1=B
+@set $tmp/prog1=V
 @set $tmp/prog1=2
 @set $tmp/prog1=/_defs/.envprop:"$lib/props" match "envprop" call
 @set $tmp/prog1=/_defs/.envsearch:"$lib/props" match "envsearch" call

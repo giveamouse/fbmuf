@@ -222,6 +222,7 @@ q
 @register lib-mesg=lib/mesg
 @register #me lib-mesg=tmp/prog1
 @set $tmp/prog1=L
+@set $tmp/prog1=V
 @set $tmp/prog1=/_/de:A scroll containing a spell called lib-mesg
 @set $tmp/prog1=/_defs/MSG-append:"$lib/mesg" match "MSG-append" call
 @set $tmp/prog1=/_defs/MSG-count:"$lib/mesg" match "MSG-count" call

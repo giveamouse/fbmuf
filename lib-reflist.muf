@@ -162,6 +162,7 @@ q
 @set $tmp/prog1=S
 @set $tmp/prog1=B
 @set $tmp/prog1=2
+@set $tmp/prog1=V
 @set $tmp/prog1=/_defs/REF-add:reflist_add
 @set $tmp/prog1=/_defs/REF-delete:reflist_del
 @set $tmp/prog1=/_defs/REF-first:array_get_reflist dup if 0 [] else pop #-1 then

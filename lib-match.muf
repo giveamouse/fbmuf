@@ -189,6 +189,7 @@ q
 @register lib-match=lib/match
 @register #me lib-match=tmp/prog1
 @set $tmp/prog1=L
+@set $tmp/prog1=V
 @set $tmp/prog1=/_/de:A scroll containing a spell called lib-match
 @set $tmp/prog1=/_defs/.controls:"$lib/match" match "controls" call
 @set $tmp/prog1=/_defs/.match_controlled:"$lib/match" match "match_controlled" call

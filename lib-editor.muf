@@ -485,6 +485,7 @@ q
 @register lib-editor=lib/editor
 @register #me lib-editor=tmp/prog1
 @set $tmp/prog1=L
+@set $tmp/prog1=V
 @set $tmp/prog1=/_/de:A scroll containing a spell called lib-editor
 @set $tmp/prog1=/_defs/editor:"$lib/editor" match "editor" call
 @set $tmp/prog1=/_defs/editorheader:"$lib/editor" match "editorheader" call

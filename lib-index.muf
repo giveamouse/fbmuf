@@ -727,6 +727,7 @@ q
 @register #me lib-index=tmp/prog1
 @set $tmp/prog1=L
 @set $tmp/prog1=3
+@set $tmp/prog1=V
 @set $tmp/prog1=/_/de:A scroll containing a spell called lib-index
 @set $tmp/prog1=/_defs/.index-add:"$lib/index" match "index-add" call
 @set $tmp/prog1=/_defs/.index-add-sort:"$lib/index" match "index-add-sort" call

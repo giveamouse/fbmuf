@@ -144,6 +144,7 @@ q
 @register lib-stackrng=lib/stackrng
 @register #me lib-stackrng=tmp/prog1
 @set $tmp/prog1=L
+@set $tmp/prog1=V
 @set $tmp/prog1=/_defs/popn:"$lib/stackrng" match "popoffn" call
 @set $tmp/prog1=/_defs/sr-catrng:"$lib/stackrng" match "catranges" call
 @set $tmp/prog1=/_defs/sr-copyrng:"$lib/stackrng" match "copyrange" call

@@ -194,6 +194,7 @@ q
 @register lib-mesgbox=lib/mesgbox
 @register #me lib-mesgbox=tmp/prog1
 @set $tmp/prog1=L
+@set $tmp/prog1=V
 @set $tmp/prog1=/_/de:A scroll containing a spell called lib-mesgbox
 @set $tmp/prog1=/_defs/MBOX-append:"$lib/mesgbox" match "MBOX-append" call
 @set $tmp/prog1=/_defs/MBOX-badref?:"$lib/mesgbox" match "MBOX-badref?" call

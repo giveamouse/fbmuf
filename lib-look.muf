@@ -328,6 +328,7 @@ q
 @set $tmp/prog1=S
 @set $tmp/prog1=H
 @set $tmp/prog1=2
+@set $tmp/prog1=V
 @set $tmp/prog1=/_/de:A scroll containing a spell called lib-look.muf
 @set $tmp/prog1=/_defs/.cmd-look:"$lib/look" match "cmd-look" call
 @set $tmp/prog1=/_defs/.contents-filter:"$lib/look" match "contents-filter" call

@@ -383,6 +383,7 @@ q
 @set $tmp/prog1=B
 @set $tmp/prog1=H
 @set $tmp/prog1=S
+@set $tmp/prog1=V
 @set $tmp/prog1=/_/de:A scroll containing a spell called lib-lmgr
 @set $tmp/prog1=/_defs/.lmgr-clearelem:"$lib/lmgr" match "lmgr-clearelem" call
 @set $tmp/prog1=/_defs/.lmgr-clearrange:"$lib/lmgr" match "lmgr-clearrange" call

@@ -383,6 +383,7 @@ q
 @register lib-edit=lib/edit
 @register #me lib-edit=tmp/prog1
 @set $tmp/prog1=L
+@set $tmp/prog1=V
 @set $tmp/prog1=/_/de:A scroll containing a spell called lib-edit
 @set $tmp/prog1=/_defs/EDITcenter:"$lib/edit" match "EDITcenter" call
 @set $tmp/prog1=/_defs/EDITcopy:"$lib/edit" match "EDITcopy" call

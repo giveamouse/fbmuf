@@ -81,6 +81,7 @@ q
 @register lib-strings=lib/strings
 @register #me lib-strings=tmp/prog1
 @set $tmp/prog1=L
+@set $tmp/prog1=V
 @set $tmp/prog1=/_/de:A scroll containing a spell called stringslib
 @set $tmp/prog1=/_defs/.asc:ctoi
 @set $tmp/prog1=/_defs/.blank?:striplead not

@@ -37,6 +37,7 @@ q
 @register lib-mpi=lib/mpi
 @set $lib/mpi=L
 @set $lib/mpi=W
+@set $lib/mpi=V
 @set $lib/mpi=_defs/parse_desc:"$lib/mpi" match "parse_desc" call
 @set $lib/mpi=_defs/parse_idesc:"$lib/mpi" match "parse_idesc" call
 @set $lib/mpi=_defs/parse_succ:"$lib/mpi" match "parse_succ" call
