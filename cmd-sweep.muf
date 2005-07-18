@@ -1,3 +1,6 @@
+@program cmd-sweep
+1 10000 d
+1 i
 ( CMD-SWEEP   by Tygryss, IMiR of XR     Written 2/5/91        )
 ( Sends home all players in a room who are sleeping, and who   )
 (  are not owners of the room.  It also sends their contents   )
@@ -17,6 +20,7 @@
   @/sweepable?        If 'yes', player it is set on can be swept by anyone,
                        they are swept home, always.
 )
+$include $lib/strings
   
 $def LOGOUT_SAFE_TIME 180
 $def getlinkfix dup program? if owner else getlink then
@@ -262,4 +266,9 @@ pop exit
       then
    then
 ;
+.
+c
+q
+@action sweep;swee=#0=tmp/exit1
+@link $tmp/exit1=cmd-sweep
 
