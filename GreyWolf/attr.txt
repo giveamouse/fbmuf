@@ -1,7 +1,5 @@
-@tel #699=me
-@set #699=_docs:@list #699=1-17
-@edit #699
-1 1000 del
+@program cmd-attributes
+1 100000 del
 i
 ( header, 17 lines -- Attr-Edit.cmd, programmed by Jordan Greywolf
 version 1.0, last updated 30 Jul 94
@@ -14,6 +12,9 @@ can fly, breathe underwater, etc.  Each of these "attributes" is stored
 as a propname, an alias [so the user can set it through the program], a short
 description, and a larger explanation.  Attributes can be added/removed from
 this listing by any Wizard or the trigger owner.
+:
+The program sets up a convenient reference for some commonly-set properties
+that may appear on players and objects, along with accompanying documentation.
 :
 Uses FB5.31 and supports MPI.  This version also uses the "lmgr" [list
 manager] libraries.
@@ -591,4 +592,7 @@ tell
 ;
 .
 compile
-quit
+quit
+@set cmd-attributes=_docs:@list cmd-attributes=1-20
+@action attributes;attribute;attr;aset=#0=tmp/exit1
+@link $tmp/exit1=cmd-attributes
