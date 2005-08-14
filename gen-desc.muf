@@ -241,7 +241,6 @@ one.
     However you can only use a proploc owned by someone else if it is set
 _proploc_ok?:yes
 .
-c
 q
 @register gen-desc-docs=desc-docs
 @prog gen-desc-2
@@ -555,16 +554,16 @@ public gen-desc
 c
 q
 @register gen-desc-2=desc
-@set $tmp/prog1=W
-@set $tmp/prog1=L
-@set $tmp/prog1=/_/de:@$desc %list[doc]
-@set $tmp/prog1=/_defs/.eval-loop:"$desc" match "eval-loop" call
-@set $tmp/prog1=/_defs/.format-print:"$desc" match "format-print" call
-@set $tmp/prog1=/_defs/.gen-desc:"$desc" match "gen-desc" call
-@set $tmp/prog1=/_defs/.get-legal-prop:"$desc" match "get-legal-prop" call
-@set $tmp/prog1=/_defs/.split-args:"$desc" match "split-args" call
-@set $tmp/prog1=/_defs/.wipe-list:"$desc" match "wipe-list" call
-@set $tmp/prog1=/_docs:@list $desc-docs
+@set $desc=W
+@set $desc=L
+@set $desc=/_/de:@$desc %list[doc]
+@set $desc=/_defs/.eval-loop:"$desc" match "eval-loop" call
+@set $desc=/_defs/.format-print:"$desc" match "format-print" call
+@set $desc=/_defs/.gen-desc:"$desc" match "gen-desc" call
+@set $desc=/_defs/.get-legal-prop:"$desc" match "get-legal-prop" call
+@set $desc=/_defs/.split-args:"$desc" match "split-args" call
+@set $desc=/_defs/.wipe-list:"$desc" match "wipe-list" call
+@set $desc=/_docs:@list $desc-docs
 @prog gen-desc-lib
 1 99999 d
 1 i
@@ -1135,5 +1134,5 @@ public do-prand
 c
 q
 @register gen-desc-lib=desc-lib
-@set $tmp/prog1=L
-@set $tmp/prog1=2
+@set $desc-lib=L
+@set $desc-lib=2
