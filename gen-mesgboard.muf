@@ -1,16 +1,31 @@
 @prog gen-mesgboard
-1 9999 d
+1 99999 d
 1 i
-( MUFmessageBoard v0.80   Copyright 5/31/91 by Garth Minette )
+( MUFmessageBoard v3.0    Copyright 5/31/91 by Garth Minette )
 (                                           foxen@netcom.com )
+( gui code by Revar/Naiya                                    )
 ( A program for storing and displaying multi-line messages   )
   
 ( This code may be freely distributed, and code from it may   
   used in other non-similar programs, but the author's name
   must be credited.                                          )
   
-$def VERSION "MessageBoard v2.7"
+(To install, simply create an item to stand for the board and
+ to hold all its properties.  Then create actions on that item
+ for the 'read', 'write', 'editmsg', and 'erase' functions,
+ linking them all to this program.  Optional features are
+ 'protect' which prevents messages from auto-deletion if that
+ function is enabled, [set the property '_expire' on the board
+ object to the number of days messages will live] and 'boardgui'
+ which enables a gui interface for browsing and posting if
+ the MUCK server has MCP built into it [like FuzzBall 6 and
+ Proto] and if the user is using a MCP capable client like
+ Trebuchet. )
   
+$def VERSION "MessageBoard v3.0"
+$ifdef __version>Muck2.2fb5.00
+$def GUI 1
+$endif
 $include $lib/strings
 $include $lib/props
 $include $lib/match
@@ -23,7 +38,18 @@ $include $lib/editor
 $def .sedit_std EDITOR
 $def STRtolower tolower
 $def DAYOFFSET 7800
-  
+ 
+$ifdef GUI
+$include $lib/gui
+$def tell descrcon swap connotify
+$def }join } array_make "" array_join
+lvar messData
+lvar curMess
+lvar messDlog
+lvar messKeys
+$endif
+lvar bbsobj
+ 
   
 ( ***** Misc. Object ***** )
   
@@ -428,12 +454,483 @@ lvar fromline
         pop pop
     then
 ;
+ 
+$def basename "msgs"
+: get-bbsobj (default -- bbsdbref)
+    dup "_bbsloc" getpropstr
+    dup not if pop exit then
+    dup number? not if pop exit then
+    atoi dbref
+    dup ok? not if pop exit then
+    over owner over .controls
+    if swap then pop
+;
+ 
+$ifdef GUI
+: msg_index_gen[ int:doUpdate -- ]
+    messData @ array_count var! oldMessCount
+    0 array_make messData !
+    preempt
+    messKeys @ basename bbsobj @ over over MBOX-count 1
+    begin
+        over over < if pop pop pop pop pop break then
+        5 pick over 6 pick 6 pick
+        3 pick 3 pick 3 pick MBRDdisplay-expire? if
+            MBOX-delmesg pop
+            swap 1 - swap
+        else
+            3 pick 3 pick 3 pick MBRDparseinfo
+            (topicstr refnum base dbref keywords protect? poster day subject)
+            5 rotate 9 rotate dup if
+                (If keyword is a negative number, don't display mesgs older than that)
+                dup number? over atoi 0 < and if
+                    4 pick get-day - over atoi < if
+                        pop pop pop pop pop pop pop pop pop
+                        1 + continue
+                    then
+                        pop pop
+                else
+                    (If keyword is 'new', don't display messages older than 2 days)
+                    dup "new" stringcmp not if
+                        get-day 5 pick - 3 >= if
+                            pop pop pop pop pop pop pop pop pop
+                            1 + continue
+                        then
+                        pop pop
+                    else
+                        (If keyword isn't in the keywords of the mesg don't display)
+                        instr not if
+                            pop pop pop pop pop pop pop
+                            1 + continue
+                        then
+                    then
+                then
+            else
+                pop pop
+            then
+            rot (get poster)
+            dup ok? if
+                dup player? if name
+                else pop "(Toaded player)"
+                then
+            else pop "(Toaded player)"
+            then
+            rot get-day swap -
+            dup 7 < if
+                dup not if pop "Today"
+                else dup 1 = if pop "Yesterday"
+                    else intostr " days ago" strcat
+                    then
+                then
+            else 7 / dup 1 = if pop "Last week"
+                else intostr " weeks ago" strcat
+                then
+            then
+            "author" -3 rotate
+            "date" swap
+            "subject" -6 rotate
+            "refnum" 12 pick
+            "protect" 10 pick
+            "itmstr" 10 pick
+            7 pick
+            4 pick if "+" else "-" then
+            11 pick "%-20s %1s %-14s : %s" fmtstring
+            6 array_make_dict
+            messData @ array_appenditem messData !
+            pop pop pop pop
+            1 +
+        then
+    repeat
+    foreground
+    doUpdate @ if
+        oldMessCount @ 0 > if (nuke old values)
+            messDlog @ "msgs" "delete"
+            { "items" { oldMessCount @ -- begin
+                dup while
+                dup --
+            repeat
+            }list }dict GUI_CTRL_COMMAND
+        then
+        messDlog @ "msgs" "insert"
+        { "values" { messData @ foreach
+            swap pop (discard index)
+            "itmstr" []
+        repeat }list }dict GUI_CTRL_COMMAND
+    then
+;
+ 
+$def get_gui_val [] array_vals pop
+ 
+: gui_postwrite_cb[ dict:context str:dlogid str:ctrlid str:event -- int:exit ]
+    dlogid @ GUI_VALUES_GET var! vals
+    context @ "descr" [] var! dscr
+ 
+    "Post new message"
+    "Are you sure this is ready for posting?"
+    { "Yes" "No" }list
+    { "default" "No" }dict
+    gui_messagebox "Yes" strcmp not if
+        preempt
+        basename bbsobj @ vals @ "subj" get_gui_val
+        vals @ "keywd" get_gui_val
+        0 me @ owner get-day 5 rotate MBRDreparseinfo rot rot
   
+        ( infostr base dbref )
+        vals @ "body" [] array_vals
   
+        (Stamp the name and time onto the message)
+        "  " over 2 + 0 swap - rotate 1 +
+        "From: " me @ name strcat
+        me @ player? not if
+            (if it's a puppet, then include the owner's name too)
+            " (" strcat
+            me @ owner name strcat
+            ")" strcat
+        then
+        "  " strcat "%X %x %Z" systime timefmt strcat
+        over 2 + 0 swap - rotate 1 +
+  
+        ( store post )
+        dup 4 + rotate
+        over 4 + rotate
+        3 pick 4 + rotate
+        MBOX-append
+        foreground
+        dlogid @ gui_dlog_close
+        dlogid @ gui_dlog_deregister
+        1 msg_index_gen
+    then
+    0
+;
+    
+: gui_cancelwrite_cb[ dict:context str:dlogid str:ctrlid str:event -- int:exit ]
+    "Cancel new message"
+    "Are you sure you want to cancel this new message?"
+    { "Yes" "No" }list
+    { "default" "No" }dict
+    gui_messagebox "Yes" strcmp not if
+        dlogid @ gui_dlog_close
+        dlogid @ gui_dlog_deregister
+    then
+    0
+;
+  
+: gen_writer_dlog[ -- dict:Handlers str:dlogid ]
+    {SIMPLE_DLOG "Post Message"
+        {LABEL ""
+            "value" "Subject"
+            "newline" 0
+            }CTRL
+        {EDIT "subj"
+            "value" "This is a subject"
+            "sticky" "ew"
+            }CTRL
+        {LABEL ""
+            "value" "Keywords"
+            "newline" 0
+            }CTRL
+        {EDIT "keywd"
+            "value" "Default keywords"
+            "sticky" "ew"
+            "hweight" 1
+            }CTRL
+        {MULTIEDIT "body"
+            "value" ""
+            "width" 80
+            "height" 20
+            "colspan" 2
+            }CTRL
+        {FRAME "bfr"
+            "sticky" "ew"
+            "colspan" 2
+            {BUTTON "PostBtn"
+                "text" "Post"
+                "width" 8
+                "sticky" "e"
+                "hweight" 1
+                "newline" 0
+  "dismiss" 0
+                "|buttonpress" 'gui_postwrite_cb
+                }CTRL
+            {BUTTON "CancelBtn"
+                "text" "Cancel"
+                "width" 8
+                "sticky" "e"
+                "dismiss" 0
+                "|buttonpress" 'gui_cancelwrite_cb
+                }CTRL
+        }CTRL
+        "|_closed|buttonpress" 'gui_cancelwrite_cb
+    }DLOG
+    DESCR swap GUI_GENERATE
+    dup GUI_DLOG_SHOW
+;
+  
+: gui_write_new_cb[ dict:context str:dlogid str:ctrlid str:event -- int:exit ]
+    gen_writer_dlog swap gui_dlog_register
+    0
+;
+  
+: gui_protectmsg_cb[ dict:context str:dlogid str:ctrlid str:event -- int:exit ]
+    messData @ curMess @ [] var! mItem
+    mItem @ "refnum" [] var! refNum
+    "Message protection"
+    {
+        "Are you sure you want to " mItem @ "protect" []
+        if "unprotect" else "protect" then
+        " message #" curMess @ ++ "?"
+    }join
+    { "Yes" "No" }list
+    { "default" "Yes" }dict
+    gui_messagebox
+    "Yes" strcmp not if
+        me @ "Wizard" flag?
+        me @ trigger @ getlink owner dbcmp or
+        me @ trigger @ location owner dbcmp or not if
+     "Protect failed."
+            "You don't have permission to alter the protection state of messages. [not owner of the board]"
+            { "Okay" }list
+            { "default" "Okay" }dict
+            gui_messagebox pop
+        else
+            preempt
+            refNum @ basename bbsobj @ MBOX-badref? if
+                "Bad objref" refNum intostr strcat DESCR tell
+            else
+                refnum @ basename bbsobj @ 3 pick 3 pick 3 pick MBRDparseinfo
+                4 rotate not -4 rotate MBRDsetinfo
+                foreground
+                mItem @ "protect" [] not dup mItem @ "protect" array_setitem
+                "Operation successful"
+                "Message " rot if "protected" else "unprotected" then strcat
+                { "Okay" }list
+                { "default" "Okay" }dict
+                gui_messagebox pop
+                1 msg_index_gen
+            then
+        then
+    then
+    0
+;
+ 
+: gui_deletemsg_cb[ dict:context str:dlogid str:ctrlid str:event -- int:exit ]
+    messData @ curMess @ [] var! mItem
+    mItem @ "refnum" [] var! refNum
+    "Delete message?"
+    { "Are you sure you want to delete message " curMess @ ++ ":'" mItem @ "subject" [] "'?" }join
+    { "Yes" "No" }list
+    { "default" "No" }dict
+    gui_messagebox
+    "Yes" strcmp not if
+        preempt
+        refNum @ basename bbsobj @ MBOX-badref? if
+            "Bad objref" refNum intostr strcat DESCR tell
+        else
+            refNum @ basename bbsobj @ MBRDperms? not if
+                (not owner of mesgboard or poster)
+                foreground
+                "Delete failed"
+                "You don't have permission to delete this message [not owner/poster or protected]"
+                { "Okay" }list
+                { "default" "Okay" }dict
+                gui_messagebox pop
+            else
+                refNum @ basename bbsobj @ MBOX-delmesg
+                foreground
+                "Operation successful"
+                "Message deleted"
+                { "Okay" }list
+                { "default" "Okay" }dict
+                gui_messagebox pop
+                1 msg_index_gen
+            then
+        then
+    then
+    0
+;
+ 
+: gui_listchange ( -- )
+    messData @ array_count curMess @ > if
+        messData @ curMess @ [] var! mItem
+        mItem @ "refnum" [] var! refNum
+        preempt
+        refNum @ basename bbsobj @ MBOX-badref? if
+            "Bad objref" mItem intostr strcat DESCR tell
+        else
+            messDlog @ "subj" mItem @ "subject" [] GUI_VALUE_SET
+            messDlog @ "date" mItem @ "date" [] GUI_VALUE_SET
+            messDlog @ "from" mItem @ "author" [] GUI_VALUE_SET
+            messDlog @ "body" refNum @ basename bbsobj @ MBOX-message array_make GUI_VALUE_SET
+        then
+        foreground
+    else
+        messDlog @ "subj" "-" GUI_VALUE_SET
+        messDlog @ "date" "-" GUI_VALUE_SET
+        messDlog @ "from" "-" GUI_VALUE_SET
+        messDlog @ "body" " " GUI_VALUE_SET    
+    then
+;
+ 
+: gui_listchange_cb[ dict:context str:dlogid str:ctrlid str:event -- int:exit ]
+    dlogid @ "msgs" GUI_VALUE_GET "" array_join atoi curMess !
+    messData @ array_count curMess @ < if
+        "How did we get to an item that doesn't exist?" DESCR tell
+    else
+        gui_listchange
+    then
+    0
+;
+ 
+: gui_keywdchange_cb[ dict:context str:dlogid str:ctrlid str:event -- int:exit ]
+    dlogid @ "keylst" GUI_VALUE_GET "" array_join messKeys !
+    "New keywords : " messKeys @ strcat DESCR tell
+    1 msg_index_gen
+    0
+;
+ 
+: gen_reader_dlog[ -- dict:Handlers str:DlogId ]
+ 
+    {SIMPLE_DLOG "Read Messages"
+        {FRAME "keyframe"
+               "colspan" 2
+               "sticky" "ew"
+               "newline" 1
+            {BUTTON "keyact"
+                    "text" "Set"
+                    "newline" 0
+                    "dismiss" 0
+                    "sticky" "ew"
+                    "|buttonpress" 'gui_keywdchange_cb
+            }CTRL
+            {LABEL ""
+                   "value" "Keywords"
+                   "sticky" "ew"
+                   "newline" 0
+            }CTRL
+            {EDIT  "keylst"
+                   "value" messKeys @
+                   "sticky" "ew"
+                   "newline" 0
+                   ("report" 1
+                   "|valchanged" 'gui_keywdchange_cb)
+            }CTRL
+        }CTRL
+        {LISTBOX "msgs"
+            "value" "0"
+            "sticky" "nswe"
+            "options" { 
+                messData @ foreach
+                    swap pop (discard index)
+                    "itmstr" []
+                repeat
+                }list
+            "font" "fixed"
+            "report" 1
+            "height" 5
+            "newline" 0
+            "|valchanged" 'gui_listchange_cb
+            }CTRL
+        {FRAME "bfr"
+            "sticky" "nsew"
+            {BUTTON "WriteBtn"
+                "text" "Write New"
+                "width" 8
+                "sticky" "n"
+                "dismiss" 0
+                "|buttonpress" 'gui_write_new_cb
+                }CTRL
+            {BUTTON "DelBtn"
+                "text" "Delete"
+                "width" 8
+                "sticky" "n"
+                "dismiss" 0
+                "|buttonpress" 'gui_deletemsg_cb
+                }CTRL
+            {BUTTON "ProtectBtn"
+                "text" "Protect"
+                "width" 8
+                "sticky" "n"
+                "vweight" 1
+                "dismiss" 0
+                "|buttonpress" 'gui_protectmsg_cb
+                }CTRL
+            }CTRL
+        {FRAME "header"
+            "sticky" "ew"
+            "colspan" 2
+            {LABEL "from"
+                "value" ""
+                "sticky" "w"
+                "width" 16
+                "newline" 0
+                }CTRL
+            {LABEL "subj"
+                "value" ""
+                "sticky" "w"
+                "newline" 0
+                "hweight" 1
+                }CTRL
+            {LABEL "date"
+                "value" ""
+                "sticky" "e"
+                "hweight" 1
+                }CTRL
+            }CTRL
+        {MULTIEDIT "body"
+            "value" ""
+            "width" 80
+            "height" 20
+            "readonly" 1
+            "hweight" 1
+            "toppad" 0
+            "colspan" 2
+            }CTRL
+    }DLOG
+    DESCR swap GUI_GENERATE
+    dup GUI_DLOG_SHOW
+; 
+ 
+: gui-update[ dict:context str:event -- int:exitReq ]
+    1 msg_index_gen
+    "Message list updated." DESCR tell
+    120 "update" timer_start    
+    0
+;
+ 
+: input-handler[ dict:context str:event -- int:exitReq ]
+    (parse things like say, pose, page events in here so someone)
+    (can browse while still being social...)
+    read
+    dup "\"" stringpfx if
+      1 strcut swap pop
+      dup "You say, \"%s\"" fmtstring .tell
+      me @ name "%s says, \"%s\"" fmtstring .otell
+      0 exit
+    then
+    dup "say " stringpfx if
+      4 strcut swap pop
+      dup "You say, \"%s\"" fmtstring .tell
+      me @ name "%s says, \"%s\"" fmtstring .otell
+      0 exit
+    then
+    dup ":" stringpfx if
+      1 strcut swap pop
+      me @ name "%s %s" fmtstring loc @ swap 0 swap notify_exclude
+      0 exit
+    then
+    dup "pose " stringpfx if
+      5 strcut swap pop
+      me @ name "%s %s" fmtstring loc @ swap 0 swap notify_exclude
+      0 exit
+    then
+    (dup "page " stringpfx if
+    then)
+    0
+;
+$endif  
   
 ( ***** Interface Object *****
 )
-$def basename "msgs"
   
 : handle-errs
     dup not if pop me @ "Done." notify exit then
@@ -445,15 +942,6 @@ $def basename "msgs"
     dup 6 = if pop me @ "No more messages." notify exit then
 ;
   
-: get-bbsobj (default -- bbsdbref)
-    dup "_bbsloc" getpropstr
-    dup not if pop exit then
-    dup number? not if pop exit then
-    atoi dbref
-    dup ok? not if pop exit then
-    over owner over .controls
-    if swap then pop
-;
   
   
 : MBRD-showhelp ( -- )
@@ -474,15 +962,20 @@ VERSION " by Foxen/Revar.  Capitalized words are user supplied args." strcat
 "erase MESGNUM          Lets message owner erase a previously written mesg."
 "editmesg MESGNUM       Lets message owner edit a previously written mesg."
 "protect MESGNUM        Lets a wizard protect a mesg from auto-expiration."
+$ifdef GUI
+"boardgui               Start the graphical interface if client supports it."
+18
+$else
 17
+$endif
 showrange
 ;
   
   
-lvar bbsobj
 : interface
-    preempt
     "me" match me !
+ 
+    preempt
     dup strip "#help" stringcmp not if
         pop MBRD-showhelp
         exit
@@ -491,7 +984,7 @@ lvar bbsobj
         trigger @ location
         get-bbsobj bbsobj !
         basename bbsobj @ MBRD-checkinit
-        trigger @ name
+        command @
         dup "write" instring if
             pop basename bbsobj @ MBRDadd
             handle-errs
@@ -516,6 +1009,29 @@ lvar bbsobj
             pop basename bbsobj @ MBRDprotect
             handle-errs exit
         then
+$ifdef GUI
+        dup "boardgui" instring if
+            foreground
+            pop messKeys !
+            DESCR GUI_AVAILABLE 0.0 > if
+                0 curMess !
+                0 array_make messData !
+                0 msg_index_gen
+                gen_reader_dlog dup rot gui_dlog_register
+                messDlog !
+                gui_listchange
+                "READ" 'input-handler EVENT_REGISTER
+                "TIMER.update" 'gui-update EVENT_REGISTER
+                120 "update" timer_start
+                gui_event_process
+                pop pop
+                me @ location me @ me @ name " finishes browsing the bulletin board." strcat notify_except
+                "Done." DESCR tell exit
+            else
+                "GUI not available with this client." DESCR tell exit
+            then
+        then
+$endif
         pop basename bbsobj @ MBRDdisplay
         handle-errs exit
     then
@@ -528,6 +1044,11 @@ lvar bbsobj
 c
 q
 @register gen-mesgboard=mesgboard
-@set gen-mesgboard=Link_OK
-@set gen-mesgboard=Wizard
-@set gen-mesgboard=_version:2.7
+@register #me gen-mesgboard=tmp/prog1
+@register #me gen-mesgboard=tmp/prog1
+@set $tmp/prog1=W
+@set $tmp/prog1=L
+@set $tmp/prog1=V
+@set $tmp/prog1=3
+
+
