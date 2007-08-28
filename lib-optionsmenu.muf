@@ -11,9 +11,11 @@
 (     Initial revision.                                              )
 ( v1.001 --  8/18/2003 -- Revar <revar@belfry.com>                   )
 (     Added opts_id to callback data.                                )
+( v1.002 --  3/06/2004 -- Revar <revar@belfry.com>                   )
+(     Changed regexps to PCRE style regexps to match the server.     )
 
 $author Revar Desmera <revar@belfry.com>
-$version 1.001
+$version 1.002
 $lib-version 1.001
 $note Released under the LGPL.
 
@@ -359,7 +361,7 @@ lvar main_title
             0 var! mins
             0 var! secs
             optval @
-            "^ *\\(\\([0-9]+\\)d\\)? *\\(\\([0-9]+\\):\\)?\\(\\([0-9]+\\):\\)?\\([0-9]+\\) *$"
+            "^ *(([0-9]+)d)? *(([0-9]+):)?(([0-9]+):)?([0-9]+) *$"
             REG_ICASE regexp array_count if
                 dup 2 [] atoi days !
                 dup 4 [] atoi hours !
@@ -367,7 +369,7 @@ lvar main_title
                 dup 7 [] atoi secs !
             else
                 optval @
-                "^ *\\([0-9]+\\) *\\([dhms]\\) *$"
+                "^ *([0-9]+) *([dhms]) *$"
                 REG_ICASE regexp array_count if
                     dup 1 []
                     over 2 [] "d" stringcmp not if 86400 * then
