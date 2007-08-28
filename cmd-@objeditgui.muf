@@ -876,6 +876,7 @@ $def yesprop? getpropstr 1 strcut pop "y" stringcmp not
         who @ "w" flag? or and if
             {
                 "group"  "Flags"
+                "grouplabel" "Flag settings [A to K]."
                 obj @ case
                     program? when
                         "name" "Bound"
@@ -902,6 +903,7 @@ $def yesprop? getpropstr 1 strcut pop "y" stringcmp not
         obj @ program? not if
             {
                 "group"  "Flags"
+                "grouplabel" "Flag settings [A to K]."
                 obj @ case
                     player? when
                         "name" "Color"
@@ -924,6 +926,7 @@ $def yesprop? getpropstr 1 strcut pop "y" stringcmp not
         who @ "w" flag? or if
             {
                 "group"  "Flags"
+                "grouplabel" "Flag settings [A to K]."
                 obj @ case
                     player? when
                         "name" "Dark"
@@ -959,6 +962,7 @@ $def yesprop? getpropstr 1 strcut pop "y" stringcmp not
 
         {
             "group"  "Flags"
+            "grouplabel" "Flag settings [A to K]."
             obj @ case
                 player? when
                     "name"  "Haven"
@@ -995,6 +999,7 @@ $def yesprop? getpropstr 1 strcut pop "y" stringcmp not
         obj @ program? or not if
             {
                 "group"  "Flags"
+                "grouplabel" "Flag settings [A to K]."
                 obj @ case
                     player? when
                         "name"  "Jump_OK"
@@ -1021,6 +1026,7 @@ $def yesprop? getpropstr 1 strcut pop "y" stringcmp not
         obj @ player? if
             {
                 "group"  "Flags"
+                "grouplabel" "Flag settings [A to K]."
                 obj @ case
                     player? when
                         "name"  "Kill_OK"
