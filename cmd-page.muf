@@ -53,8 +53,8 @@ $def descr_idle descrcon conidle
         dup ok? if
             dup owner 3 pick
             dbcmp if swap then
-        else swap
-        then pop
+        then
+        pop
     else pop
     then
 ;
