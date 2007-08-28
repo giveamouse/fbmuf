@@ -2,7 +2,7 @@
 1 99999 d
 1 i
 ( cmd-uptime v2.0 by Revar Desmera <revar@belfry.com> )
-( Designed to run under fb4 or fb5.xx                 )
+( Designed to run under fb4 or later.                 )
 
 lvar starttime
 lvar yearday
