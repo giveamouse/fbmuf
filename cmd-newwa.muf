@@ -52,6 +52,7 @@ $endif
     opts @ "quell" [] not if
         me @ "w" flag? if 1 exit then
     then
+    who @ ok? not if 0 exit then
     who @ namenever_prop getpropstr if 0 EXIT then
     who @ "H" flag? if 0 EXIT then
     who @ nameok_prop getpropstr if 1 EXIT then
@@ -59,6 +60,7 @@ $endif
       if 0 exit then  (stringcmp reverse logic)
     who @ "_proploc" getpropstr atoi     (d i)
       dup if dbref else pop who @ then
+      dup ok? not if pop 0 exit then
       whereisunfind_prop getpropstr 1 strcut pop "y" stringcmp
 ;
  
